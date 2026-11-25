@@ -1,6 +1,9 @@
 let previous=0;
+const portrait=matchMedia('(orientation: portrait)');
+function orientationChanged(){clearInput();resize();if(portrait.matches&&mode==='play')pause();}
+portrait.addEventListener('change',orientationChanged);
 function frame(now){
- const dt=Math.min(.033,(now-(previous||now))/1000);previous=now;globalTime+=dt;
+ const dt=Math.min(.033,(now-(previous||now))/1000);previous=now;if(portrait.matches){requestAnimationFrame(frame);return;}globalTime+=dt;
  if(notice>0){notice-=dt;if(notice<=0)$('announce').textContent=''}
  if(mode==='play'){
   tick(dt);score(dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);
