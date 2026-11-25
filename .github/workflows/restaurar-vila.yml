@@ -1,0 +1,57 @@
+name: Restaurar Vila do Retorno
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/restaurar-vila.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair e validar
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile, pathlib, tempfile, shutil, json
+          root=pathlib.Path.cwd()
+          with tempfile.TemporaryDirectory() as tmp:
+              dest=pathlib.Path(tmp)
+              with zipfile.ZipFile(root/'Vila-do-Retorno-organizado.zip') as z:
+                  for p in z.namelist():
+                      if not (dest/p).resolve().is_relative_to(dest.resolve()):
+                          raise ValueError(p)
+                  z.extractall(dest)
+              candidates=[p.parent for p in dest.rglob('index.html') if all((p.parent/d).is_dir() for d in ('assets','codigo','dados'))]
+              assert len(candidates)==1, candidates
+              src=candidates[0]
+              for p in ['codigo/jogo.js','codigo/estilo.css','dados/rua.json','dados/fachadas.json']:
+                  assert (src/p).is_file(), p
+              buildings=json.loads((src/'dados/fachadas.json').read_text())
+              street=json.loads((src/'dados/rua.json').read_text())
+              ids=['cenario/horizonte','cenario/rua','objetos/fiacao']
+              ids += ['objetos/'+x[0] for x in street['objetos']]
+              for b in buildings:
+                  ids += [b['id']]+[p['id'] for p in b['partes']]
+              for side in ['direita','esquerda']:
+                  ids.append('personagem/'+side+'/parado')
+                  for gait in ['andar','correr']:
+                      ids += [f'personagem/{side}/{gait}/{i:02}' for i in range(1,7)]
+              for i in ids:
+                  assert (src/'assets'/(i+'.png')).is_file(), i
+              for p in root.iterdir():
+                  if p.name not in ('.git','.github'):
+                      shutil.rmtree(p) if p.is_dir() else p.unlink()
+              for p in src.iterdir():
+                  if p.name not in ('.git','.github','__MACOSX','.DS_Store'):
+                      shutil.copytree(p,root/p.name) if p.is_dir() else shutil.copy2(p,root/p.name)
+          PY
+      - name: Publicar arquivos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Restaurar Vila do Retorno com estrutura original"
+          git push origin HEAD:main
