@@ -1,5 +1,8 @@
 let view={x:0,y:0,w:1,h:1};
 function resize(){
+ const vv=window.visualViewport;
+ document.documentElement.style.setProperty('--screen-w',Math.floor(vv?.width||innerWidth)+'px');
+ document.documentElement.style.setProperty('--screen-h',Math.floor(vv?.height||innerHeight)+'px');
  const box=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
  canvas.width=Math.max(1,Math.round(box.width*dpr));canvas.height=Math.max(1,Math.round(box.height*dpr));ctx.imageSmoothingEnabled=false;
 }
@@ -47,3 +50,5 @@ addEventListener('blur',()=>{clearInput();pause()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInput();pause()}});
 $('pause').onclick=pause;
 addEventListener('resize',resize);
+
+window.visualViewport?.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>{resize();setTimeout(resize,250);setTimeout(resize,600)});document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
