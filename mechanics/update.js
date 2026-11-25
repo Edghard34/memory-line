@@ -1,3 +1,6 @@
+let campSleep=null;
+function beginCampSleep(){resumePlay();clearInput();mode='sleep';$('touch').hidden=true;$('hud').hidden=true;$('talk').hidden=true;const mat=objects.find(o=>o.k==='bedroll_b');campSleep={phase:'walk',t:0,x:mat.x,y:mat.y+5};}
+function tickCampSleep(dt){const a=campSleep;if(!a)return;const fade=$('sleep-fade');a.t+=dt;if(a.phase==='walk'){const dx=a.x-player.x,dy=a.y-player.y,d=Math.hypot(dx,dy);if(d<2){player.walk=0;a.phase='out';a.t=0;}else{const step=Math.min(d,55*dt);player.x+=dx/d*step;player.y+=dy/d*step;player.dx=dx/d;player.dy=dy/d;if(Math.abs(dx)>1)player.facing=Math.sign(dx);player.walk+=dt*9;}}else if(a.phase==='out'){fade.style.opacity=Math.min(1,a.t/2.5);if(a.t>=2.5){a.phase='black';a.t=0;run.day=true;run.campStage=2;run.hp=player.hp;keep();}}else if(a.phase==='black'){if(a.t>=1.2){a.phase='in';a.t=0;}}else{fade.style.opacity=Math.max(0,1-a.t/3);if(a.t>=3){campSleep=null;resumePlay();}}}
 function clearFight(){
  fight=false;cleared=true;hazards=[];shots=[];
  run.rooms++;heal(stat('clear'));run.coins+=stat('gold');
@@ -21,7 +24,7 @@ function tick(dt){
  input.dash=input.skill=false;
  if(player.dash>0){const a=Math.atan2(player.dy,player.dx);steer(player,Math.cos(a)*278*dt,Math.sin(a)*278*dt);if(rng()<.65)dust(player.x,player.y,'#dc8853',2,29)}
  else {const v=hero[3]*(1+stat('speed'));steer(player,x*v*dt,y*v*dt)}
- const npc=objects.find(o=>o.npc&&distance(o,player)<28);const talk=$('talk');if(talk){talk.hidden=!npc;talk.onclick=()=>{if(!npc)return;const lines={Luzia:'A mata mudou desde que a última luz se apagou. Fique na trilha até conhecer o terreno.',Zambi:'Ouvi um assobio vindo do norte. Não parecia coisa de gente. Se quiser investigar, siga com cuidado.',Tião:'Pode descansar perto do fogo. Mais adiante vi rastros estranhos entre as árvores.'};npcDialogue(npc,lines[npc.npc]);talk.hidden=true;};}
+ const npc=objects.find(o=>o.npc&&distance(o,player)<28);const talk=$('talk');if(talk){talk.hidden=!npc;talk.onclick=()=>{if(!npc)return;const lines={Luzia:'A mata mudou desde que a última luz se apagou. Fique na trilha até conhecer o terreno.',Zambi:'Ouvi um assobio vindo do norte. Não parecia coisa de gente. Se quiser investigar, siga com cuidado.',Tião:'Pode descansar perto do fogo. Mais adiante vi rastros estranhos entre as árvores.'};const stage=run.campStage||0;const camp=objects.filter(o=>o.npc);if(!run.day&&stage===0){npcDialogue(npc,'Ainda bem que encontrou nosso acampamento. A mata não é segura a esta hora. Converse com '+camp.find(o=>o!==npc).npc+'.',()=>{run.campStage=1;run.firstCampNpc=npc.npc;keep();resumePlay();});}else if(!run.day&&stage===1&&npc.npc!==run.firstCampNpc){npcDialogue(npc,'Não é seguro andar pela mata à noite. Melhor dormir por aqui mesmo. Pode usar meu pano, aquele mais abaixo. Ao amanhecer, você segue viagem.',beginCampSleep,'Vou descansar');}else{npcDialogue(npc,run.day?'Bom dia! Agora já pode seguir viagem.':lines[npc.npc]);}talk.hidden=true;};}
  player.walk=Math.hypot(x,y)>.1||player.dash>0?player.walk+dt*9:0;
  if(fight){
   const drain=(sinceHit>7?2.2:sinceHit>3?1.36:.75)*(1-clamp(stat('drain'),-.65,.73));
