@@ -354,12 +354,43 @@ let bartenderTick=()=>{};
    }
    return hi-lo>1e-6;
  }
+ const nav=man.position.clone();
+ const shoeGeometry={"Left": [["Foot", 0.10156700015068054, -0.05499900132417679, -0.04305500164628029], ["Foot", 0.10195200145244598, -0.020457999780774117, -0.0549129992723465], ["Foot", 0.10230699926614761, 0.008967000059783459, -0.05615900084376335], ["Foot", 0.10287699848413467, 0.04948100075125694, -0.06033800169825554], ["ToeBase", -0.03466000035405159, -0.0015940000303089619, -0.0606050007045269], ["ToeBase", 0.03679399937391281, -0.0014100000262260437, -0.04430200159549713], ["ToeBase", 0.041297998279333115, -0.0005670000100508332, 0.03683599829673767], ["ToeBase", 0.07123800367116928, 0.003942000214010477, 0.026809999719262123]], "Right": [["Foot", 0.10156700015068054, -0.05499900132417679, 0.04305399954319], ["Foot", 0.101951003074646, -0.020459000021219254, 0.0549129992723465], ["Foot", 0.10230699926614761, 0.008967000059783459, 0.05615900084376335], ["Foot", 0.10287699848413467, 0.04948100075125694, 0.06033800169825554], ["ToeBase", -0.03466099873185158, -0.0015940000303089619, 0.0606050007045269], ["ToeBase", 0.036793000996112823, -0.0014100000262260437, 0.04430200159549713], ["ToeBase", 0.041297998279333115, -0.0005670000100508332, -0.03683499991893768], ["ToeBase", 0.07123800367116928, 0.003942000214010477, -0.026808999478816986]]};
+ const probes=Object.entries(shoeGeometry).flatMap(([side,points])=>points.map(([joint,x,y,z])=>({
+   bone:bone(side+joint),local:new T.Vector3(x,y,z),previous:new T.Vector3(),current:new T.Vector3()
+ })));
+ let previousContact=false;
+ const contactDelta=new T.Vector3();
+ function groundShoes(){
+   man.updateMatrixWorld(true);
+   let lowest=probes[0];
+   for(const p of probes){
+     p.current.copy(p.local).applyMatrix4(p.bone.matrixWorld);
+     if(p.current.y<lowest.current.y)lowest=p;
+   }
+   contactDelta.set(0,0,0);
+   if(previousContact){
+     contactDelta.copy(lowest.previous).sub(lowest.current);
+     contactDelta.y=0;
+     const offset=man.position.clone().add(contactDelta).sub(nav);
+     offset.y=0;
+     offset.clampLength(0,.16);
+     const next=nav.clone().add(offset);
+     if(!blocked(nav,next) && Math.abs(next.x)<=2.02 && next.z>=-1.72 && next.z<=1.78)
+       contactDelta.copy(next).sub(man.position);
+     else contactDelta.copy(nav).sub(man.position);
+   }
+   contactDelta.y=-lowest.current.y;
+   man.position.add(contactDelta);
+   for(const p of probes)p.previous.copy(p.current).add(contactDelta);
+   previousContact=true;
+ }
  let route=[], speed=0, heading=0, distance=0, weight=0;
  walkTo = p => {
    if (!p || Math.abs(p.x)>2.25 || Math.abs(p.z)>2) return;
    const goal=new T.Vector3(T.MathUtils.clamp(p.x,-2.02,2.02),0,T.MathUtils.clamp(p.z,-1.72,1.78));
    if (inside(goal)) return;
-   const nodes=[man.position.clone(),goal,new T.Vector3(edge+.16,0,back-.14),new T.Vector3(edge+.16,0,front+.14)];
+   const nodes=[nav.clone(),goal,new T.Vector3(edge+.16,0,back-.14),new T.Vector3(edge+.16,0,front+.14)];
    const options=[[1],[2,1],[3,1],[2,3,1],[3,2,1]];
    let shortest=Infinity;
    for (const option of options) {
@@ -389,7 +420,7 @@ let bartenderTick=()=>{};
    const now=performance.now(), dt=Math.min(.05,(now-last)/1000); last=now;
    let step=0,turnStep=0,torsoLead=0;
    if (route.length) {
-     const goal=route[0],dx=goal.x-man.position.x,dz=goal.z-man.position.z,len=Math.hypot(dx,dz);
+     const goal=route[0],dx=goal.x-nav.x,dz=goal.z-nav.z,len=Math.hypot(dx,dz);
      const desired=Math.atan2(dx,dz);
      const turn=Math.atan2(Math.sin(desired-heading),Math.cos(desired-heading));
      const curvature=Math.min(1,Math.abs(turn)/1.5);
@@ -401,11 +432,11 @@ let bartenderTick=()=>{};
      torsoLead=T.MathUtils.clamp(turn*.22,-.28,.28);
      man.rotation.y=facingOffset+heading;
      step=Math.min(len,speed*dt,(curvature>.15?Math.max(.06,len*2.5):1.2)*dt)*(1-.85*curvature);
-     const next=man.position.clone();
+     const next=nav.clone();
      next.x+=Math.sin(heading)*step; next.z+=Math.cos(heading)*step;
-     if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(man.position,next)) {step=0;walkTo(route[route.length-1]);}
-     else man.position.copy(next);
-     if(Math.hypot(goal.x-man.position.x,goal.z-man.position.z)<.012) route.shift();
+     if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(nav,next)) {step=0;walkTo(route[route.length-1]);}
+     else { man.position.x+=next.x-nav.x; man.position.z+=next.z-nav.z; nav.copy(next); }
+     if(Math.hypot(goal.x-nav.x,goal.z-nav.z)<.012) route.shift();
    } else speed=0;
    distance+=Math.hypot(step,turnStep);
    const phase=(distance%motion.stride)/motion.stride;
@@ -428,6 +459,7 @@ let bartenderTick=()=>{};
      const parent=spine.parent.getWorldQuaternion(new T.Quaternion());
      spine.quaternion.premultiply(parent.clone().invert().multiply(new T.Quaternion().setFromAxisAngle(forward,-bank)).multiply(parent));
    }
+   groundShoes();
    for(const {foot,toe,shadow} of footprints){
      foot.getWorldPosition(shadow.position);
      if(toe)shadow.position.lerp(toe.getWorldPosition(up.clone()),.55);
