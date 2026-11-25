@@ -42,7 +42,7 @@ function kitchen(scene) {
   // Animated layered city vista, rendered to the window texture.
   const city=document.createElement('canvas');city.width=768;city.height=512;
   const ctx=city.getContext('2d'), W=768,Hh=512;
-  const back=new T.CanvasTexture(city);back.colorSpace=T.SRGBColorSpace;back.anisotropy=4;
+  const back=new T.CanvasTexture(city);back.colorSpace=T.SRGBColorSpace;back.anisotropy=1;back.generateMipmaps=false;back.minFilter=T.LinearFilter;
   const buildings=[], stars=[], clouds=[];
   for(let i=0;i<48;i++)stars.push([rand()*W,rand()*180,.2+rand()*.55]);
   for(let i=0;i<7;i++)clouds.push([rand()*1000,25+rand()*145,65+rand()*130]);
@@ -54,7 +54,7 @@ function kitchen(scene) {
   }
   let lastCity=-1;
   scene.userData.updateCity=(time,camera)=>{
-    if(time-lastCity<.085)return;lastCity=time;
+    if(time-lastCity<.5)return;lastCity=time;
     const angle=0;
     const tilt=0;
     const g=ctx.createLinearGradient(0,0,0,Hh);g.addColorStop(0,'#080e20');g.addColorStop(.65,'#29354a');g.addColorStop(1,'#5b5360');ctx.fillStyle=g;ctx.fillRect(0,0,W,Hh);
@@ -486,7 +486,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
 
 const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';fpsLabel.textContent='FPS: medindo';document.body.append(fpsLabel);
 let fpsStart=performance.now(),fpsFrames=0,dustLast=0;
-const perf=document.createElement('select');perf.style.cssText='position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 30px);z-index:9999;font-size:12px';for(const [v,t] of [['normal','Normal'],['freeze','André congelado'],['hide','Sem André']]){const o=document.createElement('option');o.value=v;o.textContent=t;perf.append(o);}document.body.append(perf);perf.onchange=()=>{if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';fpsStart=performance.now();fpsFrames=0;};
-let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri';fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();scene.userData.updateCity?.(performance.now()/1000);if(stamp-dustLast>=33){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal')bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
+const perf=document.createElement('select');perf.style.cssText='position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 30px);z-index:9999;font-size:12px';for(const [v,t] of [['normal','Normal'],['freeze','André congelado'],['hide','Sem André'],['city','Cidade estática'],['blank','Teste sem render']]){const o=document.createElement('option');o.value=v;o.textContent=t;perf.append(o);}document.body.append(perf);perf.onchange=()=>{if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';fpsStart=performance.now();fpsFrames=0;};
+let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(perf.value!=='city'&&perf.value!=='blank')scene.userData.updateCity?.(stamp/1000);citySum+=performance.now()-cityStart;if(stamp-dustLast>=33){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='city')bartenderTick();const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
 }catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
 
