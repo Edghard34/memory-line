@@ -21,7 +21,7 @@ function enter(){
  roomTime=0;stageClock=0;sinceHit=0;doorLock=.7;shake=0;flash=0;cleared=false;fight=run.kind==='combat'||run.kind==='elite'||run.room===4;
  prepareFloor(biome,rng);
  objects.push({x:W/2+78,y:H-421,k:'fire0',w:26,r:9});
- objects.push({x:W/2+122,y:H-435,k:'bedroll_a',w:24,r:10},{x:W/2+149,y:H-410,k:'bedroll_b',w:24,r:10});
+ objects.push({x:W/2+122,y:H-435,k:'bedroll_a',w:24,r:0},{x:W/2+149,y:H-410,k:'bedroll_b',w:24,r:0});
  HEROES.filter((_,i)=>i!==run.id).forEach((a,i)=>objects.push({x:W/2+78+(i?25:-25),y:H-405,k:a[1]+'0',w:24,r:7,npc:a[0]}));
  fight=true;run.zone=0;run.room=0;run.kind='combat';
  const pool=POOLS[0];
@@ -77,4 +77,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=20;
+window.brasaMapVersion=21;
