@@ -1,6 +1,6 @@
-const zambi8=['E','SE','S','SW','W','NW','N','NE'].map(d=>{const im=new Image();im.src='assets/heroes/zambi/'+d+'.png?v=46';return im;});
-const zambiMotion=Object.fromEntries(['walk_E','walk_W','sprint_E','sprint_W'].map(k=>[k,Array.from({length:8},(_,i)=>{const im=new Image();im.src='assets/heroes/zambi/'+k+'_'+String(i+1).padStart(2,'0')+'.png?v=46';return im;})]));
-function renderZambi(a){const d=(Math.round(Math.atan2(a.dy||0,a.dx||0)/(Math.PI/4))+8)%8;let im=zambi8[d];if(a.walk>0&&(d===0||d===4)){const sprint=a.dash>0;const seq=zambiMotion[(sprint?'sprint_':'walk_')+(d===0?'E':'W')];const frame=Math.floor(a.walk*(sprint?13:8)/9)%8;const candidate=seq[frame];if(candidate.complete&&candidate.naturalWidth)im=candidate;}if(!im.complete||!im.naturalWidth)return false;const size=36;g.save();g.imageSmoothingEnabled=false;g.drawImage(im,Math.round(a.x-size/2),Math.round(a.y-size),size,size);g.restore();return true;}
+const zambi8=['E','SE','S','SW','W','NW','N','NE'].map(d=>{const im=new Image();im.src='assets/heroes/zambi/'+d+'.png?v=47';return im;});
+const zambiMotion=Object.fromEntries(['walk_E','walk_W','sprint_E','sprint_W'].map(k=>[k,Array.from({length:8},(_,i)=>{const im=new Image();im.src='assets/heroes/zambi/'+k+'_'+String(i+1).padStart(2,'0')+'.png?v=47';return im;})]));
+function renderZambi(a){const d=(Math.round(Math.atan2(a.dy||0,a.dx||0)/(Math.PI/4))+8)%8;let im=zambi8[d],footOffset=0,ground=0;if(a.walk>0&&(d===0||d===4)){const sprint=a.dash>0;const seq=zambiMotion[(sprint?'sprint_':'walk_')+(d===0?'E':'W')];const frame=Math.floor(a.walk*(sprint?13:8)/9)%8;const candidate=seq[frame];if(candidate.complete&&candidate.naturalWidth){im=candidate;if(!sprint){const offsets=d===0?[0,-1,-2,-3,-2,-1,0,0]:[0,1,2,3,2,1,0,0];footOffset=offsets[frame];ground=2.25;}}}if(!im.complete||!im.naturalWidth)return false;const size=36;g.save();g.imageSmoothingEnabled=false;g.drawImage(im,Math.round(a.x-size/2+footOffset),Math.round(a.y-size+ground),size,size);g.restore();return true;}
 const houseMasks=[[[.08,.25],[.24,.10],[.72,.10],[.79,.06],[.84,.13],[.84,.32],[.91,.40],[.91,.64],[.77,.76],[.22,.76],[.12,.64]],[[.10,.35],[.31,.18],[.85,.18],[.91,.53],[.85,.76],[.24,.76],[.13,.64]],[[.08,.36],[.33,.15],[.86,.15],[.92,.54],[.85,.76],[.20,.76],[.10,.65]]];
 const blendedHouseGround=new Map();
 function houseGround(im){if(blendedHouseGround.has(im))return blendedHouseGround.get(im);const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const a=c.getContext('2d');a.drawImage(im,0,0);const w=c.width,h=c.height;const d=a.getImageData(0,0,w,h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;const nx=(x/w-.5)/.5,ny=(y/h-.56)/.56;const r=Math.hypot(nx,ny);const jitter=.035*Math.sin(x*.19+y*.13)+.025*Math.cos(x*.31-y*.23);const f=Math.max(0,Math.min(1,(.99-r+jitter)/.28));const edge=Math.min(x/w,1-x/w,y/h,1-y/h);d.data[i+3]*=Math.min(f,Math.min(1,edge/.09));}a.putImageData(d,0,0);blendedHouseGround.set(im,c);return c;}
@@ -114,7 +114,7 @@ function render(){
  if(actor)layers.push({y:actor.y,run:()=>{
   const key=title?'luzia':hero[1];
   const frame=actor.walk?Math.floor(actor.walk)%4:0;
-  sprite(g,'shadow_m',actor.x,actor.y+2,15);
+  if(key==='zambi'){g.save();g.fillStyle='rgba(12,10,8,0.32)';g.beginPath();g.ellipse(actor.x,actor.y-1,7,2.6,0,0,TAU);g.fill();g.restore();}else sprite(g,'shadow_m',actor.x,actor.y+2,15);
   g.globalAlpha=actor.inv>0&&Math.floor(globalTime*22)%2?.55:1;
   if(key!=='zambi'||!renderZambi(actor))sprite(g,key+[0,1,0,2][frame],actor.x+(actor.punch?actor.facing*3*Math.sin(actor.punch/.22*Math.PI):0),actor.y+(frame===1?-1:0),24,actor.facing<0);g.globalAlpha=1;
 
@@ -162,4 +162,4 @@ function render(){
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=46;
+window.brasaRenderVersion=47;
