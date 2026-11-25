@@ -20,6 +20,11 @@ function enter(){
  enemies=[];shots=[];drops=[];objects=[];hazards=[];fx=[];doors=[];spawnQueue=[];
  roomTime=0;stageClock=0;sinceHit=0;doorLock=.7;shake=0;flash=0;cleared=false;fight=run.kind==='combat'||run.kind==='elite'||run.room===4;
  prepareFloor(biome,rng);
+ const vx=W/2+420,vy=H-850;
+ for(let x=-112;x<=112;x+=14){objects.push({x:vx+x,y:vy-87,k:'village_fence',w:14,r:7});if(Math.abs(x)>24)objects.push({x:vx+x,y:vy+87,k:'village_fence',w:14,r:7});}
+ for(let y=-73;y<=73;y+=14)for(const x of [-112,112])objects.push({x:vx+x,y:vy+y,k:'village_fence',w:14,r:7,vertical:true});
+ for(let i=0;i<34;i++){const x=vx+(rng()<.5?-1:1)*(82+rng()*18),y=vy-70+rng()*140;objects.push({x,y,k:choose(['d_tuft','d_flower','d_moss','d_reed','rock_m'],rng),w:5+rng()*7,r:0});}
+
  objects.push({x:W/2+78,y:H-421,k:'fire0',w:26,r:9});
  objects.push({x:W/2+122,y:H-435,k:'bedroll_a',w:24,r:0},{x:W/2+149,y:H-410,k:'bedroll_b',w:24,r:0});
  HEROES.filter((_,i)=>i!==run.id).forEach((a,i)=>objects.push({x:W/2+78+(i?25:-25),y:H-405,k:a[1]+'0',w:24,r:7,npc:a[0]}));
@@ -77,4 +82,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=24;
+window.brasaMapVersion=25;
