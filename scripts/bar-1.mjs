@@ -337,7 +337,19 @@ let bartenderTick=()=>{};
  walking.play();
  walking.paused = true;
  walking.setEffectiveWeight(0);
+ // Keep the lower body in a stable idle pose while the upper body breathes.
+ const lowerJoints=['Hips','LeftUpLeg','RightUpLeg','LeftLeg','RightLeg','LeftFoot','RightFoot','LeftToeBase','RightToeBase'].map(bone).filter(Boolean);
+ const lowerNames=new Set(lowerJoints.map(j=>j.name));
  const resting = idle && mixer.clipAction(idle);
+ if(resting){
+   for(const track of idle.tracks){
+     const joint=track.name.slice(0,track.name.lastIndexOf('.'));
+     if(!lowerNames.has(joint))continue;
+     const sample=track.createInterpolant().evaluate(.1);
+     const size=track.getValueSize();
+     for(let k=0;k<track.values.length;k+=size)track.values.set(sample,k);
+   }
+ }
  const facingOffset = man.rotation.y;
  const edge = -.25, back = -1.24, front = -.12;
  const inside = p => p.x < edge && p.z > back && p.z < front;
@@ -361,7 +373,7 @@ let bartenderTick=()=>{};
  })));
  let previousContact=false;
  const contactDelta=new T.Vector3();
- function groundShoes(){
+ function groundShoes(lockHorizontal){
    man.updateMatrixWorld(true);
    let lowest=probes[0];
    for(const p of probes){
@@ -369,7 +381,7 @@ let bartenderTick=()=>{};
      if(p.current.y<lowest.current.y)lowest=p;
    }
    contactDelta.set(0,0,0);
-   if(previousContact){
+   if(previousContact && lockHorizontal){
      contactDelta.copy(lowest.previous).sub(lowest.current);
      contactDelta.y=0;
      const offset=man.position.clone().add(contactDelta).sub(nav);
@@ -445,6 +457,7 @@ let bartenderTick=()=>{};
    walking.time=T.MathUtils.lerp(motion.times[i],motion.times[i+1],(phase-motion.travel[i])/(motion.travel[i+1]-motion.travel[i]));
    const blend=T.MathUtils.clamp(Math.hypot(step,turnStep)/Math.max(dt,.00001)/.38,0,1);
    weight+=(blend-weight)*(1-Math.exp(-14*dt));
+   if(blend===0 && weight<.001)weight=0;
    walking.setEffectiveWeight(weight);
    if(resting) resting.setEffectiveWeight(1-weight);
    mixer.update(dt);
@@ -459,7 +472,7 @@ let bartenderTick=()=>{};
      const parent=spine.parent.getWorldQuaternion(new T.Quaternion());
      spine.quaternion.premultiply(parent.clone().invert().multiply(new T.Quaternion().setFromAxisAngle(forward,-bank)).multiply(parent));
    }
-   groundShoes();
+   groundShoes(weight>0);
    for(const {foot,toe,shadow} of footprints){
      foot.getWorldPosition(shadow.position);
      if(toe)shadow.position.lerp(toe.getWorldPosition(up.clone()),.55);
