@@ -83,4 +83,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=40;
+window.brasaMapVersion=41;
