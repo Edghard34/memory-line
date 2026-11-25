@@ -326,7 +326,7 @@ let bartenderTick=()=>{};
  // Face the customer side (+Z), using the model's eye positions to determine forward.
  const le=bone('LeftEye'),re=bone('RightEye');
  if(le&&re&&head){const eye=le.getWorldPosition(new T.Vector3()).add(re.getWorldPosition(new T.Vector3())).multiplyScalar(.5).sub(head.getWorldPosition(new T.Vector3()));if(Math.abs(eye.z)+Math.abs(eye.x)>.01)man.rotation.y=-Math.atan2(eye.x,eye.z);}
- const motion = await fetch('../assets/animations/andre-walk.json?v=2').then(response => {
+ const motion = await fetch('../assets/animations/andre-walk.json?v=3').then(response => {
    if (!response.ok) throw Error('Falha ao carregar a caminhada');
    return response.json();
  });
@@ -383,6 +383,38 @@ let bartenderTick=()=>{};
    shadow.rotation.x=-Math.PI/2;scene.add(shadow);
    return {foot:bone(side+'Foot'),toe:bone(side+'ToeBase'),shadow};
  });
+ const legs=['Left','Right'].map(side=>({
+   thigh:bone(side+'UpLeg'),shin:bone(side+'Leg'),foot:bone(side+'Foot'),
+   anchor:new T.Vector3(),rotation:new T.Quaternion(),held:false,strength:0
+ }));
+ const vec=()=>new T.Vector3();
+ function swingBone(b,from,to){
+   const parent=b.parent.getWorldQuaternion(new T.Quaternion());
+   const swing=new T.Quaternion().setFromUnitVectors(from.normalize(),to.normalize());
+   b.quaternion.premultiply(parent.clone().invert().multiply(swing).multiply(parent));
+   b.updateWorldMatrix(false,true);
+ }
+ function plant(leg,hold,dt){
+   const a=leg.thigh.getWorldPosition(vec()),b=leg.shin.getWorldPosition(vec()),c=leg.foot.getWorldPosition(vec());
+   const current=leg.foot.getWorldQuaternion(new T.Quaternion());
+   if(hold&&!leg.held){leg.anchor.copy(c);leg.rotation.copy(current);}
+   leg.held=hold;
+   leg.strength=hold?1:Math.max(0,leg.strength-dt*9);
+   if(!leg.strength)return;
+   const target=c.clone().lerp(leg.anchor,leg.strength);
+   const axis=target.clone().sub(a),l=a.distanceTo(b),m=b.distanceTo(c);
+   const reach=T.MathUtils.clamp(axis.length(),Math.abs(l-m)+.0001,l+m-.0001);
+   axis.normalize();
+   const pole=b.clone().sub(a);pole.addScaledVector(axis,-pole.dot(axis));
+   if(pole.lengthSq()<1e-9)return;
+   const along=(l*l-m*m+reach*reach)/(2*reach);
+   const hinge=a.clone().addScaledVector(axis,along).addScaledVector(pole.normalize(),Math.sqrt(Math.max(0,l*l-along*along)));
+   swingBone(leg.thigh,b.clone().sub(a),hinge.sub(a));
+   const knee=leg.shin.getWorldPosition(vec());
+   swingBone(leg.shin,leg.foot.getWorldPosition(vec()).sub(knee),target.sub(knee));
+   leg.foot.quaternion.copy(leg.shin.getWorldQuaternion(new T.Quaternion()).invert().multiply(current.slerp(leg.rotation,leg.strength)));
+ }
+ let stance=0,bank=0;
  let last=performance.now();
  bartenderTick=()=>{
    const now=performance.now(), dt=Math.min(.05,(now-last)/1000); last=now;
@@ -394,12 +426,12 @@ let bartenderTick=()=>{};
      const curvature=Math.min(1,Math.abs(turn)/1.5);
      const cruise=Math.min(1.12-.72*curvature,Math.sqrt(4.4*len));
      speed+=T.MathUtils.clamp(cruise-speed,-3.2*dt,2.2*dt);
-     const yaw=T.MathUtils.clamp(turn,-3.8*dt,3.8*dt);
+     const yaw=T.MathUtils.clamp(turn,-2.8*dt,2.8*dt);
      heading+=yaw;
-     turnStep=Math.abs(yaw)*.13;
+     turnStep=Math.abs(yaw)*.29;
      torsoLead=T.MathUtils.clamp(turn*.22,-.28,.28);
      man.rotation.y=facingOffset+heading;
-     step=Math.min(len,speed*dt,Math.max(.01,len*2.1)*dt)*(1-.85*curvature);
+     step=Math.min(len,speed*dt,(curvature>.15?Math.max(.06,len*2.5):1.2)*dt)*(1-.85*curvature);
      const next=man.position.clone();
      next.x+=Math.sin(heading)*step; next.z+=Math.cos(heading)*step;
      if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(man.position,next)) {step=0;walkTo(route[route.length-1]);}
@@ -421,6 +453,16 @@ let bartenderTick=()=>{};
      twist.setFromAxisAngle(up,torsoLead*weight);
      spine.quaternion.premultiply(parentRotation.clone().invert().multiply(twist).multiply(parentRotation));
    }
+   bank+=(T.MathUtils.clamp(torsoLead*.55,-.15,.15)-bank)*(1-Math.exp(-7*dt));
+   if(spine && Math.abs(bank)>.001){
+     const forward=new T.Vector3(Math.sin(heading),0,Math.cos(heading));
+     const parent=spine.parent.getWorldQuaternion(new T.Quaternion());
+     spine.quaternion.premultiply(parent.clone().invert().multiply(new T.Quaternion().setFromAxisAngle(forward,-bank)).multiply(parent));
+   }
+   const heights=legs.map(l=>l.foot.getWorldPosition(vec()).y);
+   if(heights[1-stance]+.014<heights[stance])stance=1-stance;
+   const settled=!route.length && weight<.03;
+   legs.forEach((leg,index)=>plant(leg,index===stance || (settled && Math.abs(heights[0]-heights[1])<.035),dt));
    for(const {foot,toe,shadow} of footprints){
      foot.getWorldPosition(shadow.position);
      if(toe)shadow.position.lerp(toe.getWorldPosition(up.clone()),.55);
