@@ -96,7 +96,7 @@ function render(){
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
 
- const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.house!==undefined?o.y-o.w*.24:o.y,run:()=>{if(o.house!==undefined){drawVillageHouse(g,o,true);return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
+ const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.house!==undefined?o.y-o.w*.24:o.y,run:()=>{if(o.house!==undefined){drawVillageHouse(g,o,true);return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0'&&run?.day){g.save();g.fillStyle='#493a30';g.beginPath();g.ellipse(o.x,o.y-3,9,5,0,0,TAU);g.fill();g.fillStyle='#242321';g.fillRect(o.x-6,o.y-5,12,3);g.fillRect(o.x-2,o.y-8,4,9);g.restore();return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.npc&&o.walk?o.k.slice(0,-1)+[0,1,0,2][Math.floor(o.walk)%4]:o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w,o.facing<0);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);
@@ -139,7 +139,7 @@ function render(){
  }
  n.globalCompositeOperation='source-over';
  if(!run?.day)g.drawImage(shade,Math.round(cx),Math.round(cy));
- for(const o of objects){if(o.k!=='fire0')continue;
+ for(const o of objects){if(o.k!=='fire0'||run?.day)continue;
   const f=Math.sin(globalTime*8.3)*.04+Math.sin(globalTime*13.7)*.02;
   g.save();g.globalCompositeOperation='screen';
   const r=125*(1+f),x=o.x,y=o.y;g.globalAlpha=run?.day?.18:1;
@@ -159,4 +159,4 @@ function render(){
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=34;
+window.brasaRenderVersion=35;

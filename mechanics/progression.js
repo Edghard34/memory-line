@@ -14,7 +14,7 @@ function rewardAsh(n){
  run.earned+=n;
 }
 function enter(){
- campSleep=null;$('sleep-fade').style.opacity=0;
+ campSleep=null;villageGuide=null;$('sleep-fade').style.opacity=0;
  hero=HEROES[run.id];biome=BIOMES[0];
  rng=seeded(run.seed^Math.imul(run.zone*13+run.room+1,943177));
  player={x:W/2,y:H-57,hp:run.hp,r:7,facing:1,dx:1,dy:0,walk:0,inv:0,dash:0,dashCD:0,skillCD:0,fireCD:0,guard:!!stat('guard'),count:0};
@@ -82,4 +82,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=34;
+window.brasaMapVersion=35;
