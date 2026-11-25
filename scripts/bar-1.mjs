@@ -309,8 +309,8 @@ const rocker=part(switchRoot,.069,.095,.018,0,0,.034,plateMat);rocker.rotation.x
 const roomLight=new T.PointLight(0xffead5,0,10,2);roomLight.position.set(0,2.58,0);roomLight.castShadow=true;roomLight.shadow.mapSize.setScalar(512);roomLight.shadow.bias=-.001;roomLight.shadow.autoUpdate=false;scene.add(roomLight);
 let lampOn=true;roomLight.intensity=22;roomLight.shadow.needsUpdate=true;rocker.rotation.x=.13;
 function toggleLamp(){lampOn=!lampOn;rocker.rotation.x=lampOn?.13:-.13;roomLight.intensity=lampOn?22:0;if(lampOn)roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent=lampOn?'Luz acesa · Toque no interruptor para apagar':'Luz apagada · Toque no interruptor para acender';}
-let walkTo=()=>{};
-const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:p=>walkTo(p)});document.querySelector('#homeBtn').onclick=c.home;
+let walkTo=()=>{}, pendingDestination=null;
+const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:p=>{pendingDestination=p.clone();}});document.querySelector('#homeBtn').onclick=c.home;
 
 let bartenderTick=()=>{}, diagnosticActor=null;
 (async()=>{
@@ -398,12 +398,14 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    previousContact=true;
  }
  let route=[], speed=0, heading=0, distance=0, weight=0;
+ const cornerBack=new T.Vector3(edge+.16,0,back-.14),cornerFront=new T.Vector3(edge+.16,0,front+.14),detourOptions=[[2,1],[3,1],[2,3,1],[3,2,1]];
  walkTo = p => {
    if (!p || Math.abs(p.x)>2.25 || Math.abs(p.z)>2) return;
    const goal=new T.Vector3(T.MathUtils.clamp(p.x,-2.02,2.02),0,T.MathUtils.clamp(p.z,-1.72,1.78));
    if (inside(goal)) return;
-   const nodes=[nav.clone(),goal,new T.Vector3(edge+.16,0,back-.14),new T.Vector3(edge+.16,0,front+.14)];
-   const options=[[1],[2,1],[3,1],[2,3,1],[3,2,1]];
+   if(!blocked(nav,goal)){route=[goal];return;}
+   const nodes=[nav,goal,cornerBack,cornerFront];
+   const options=detourOptions;
    let shortest=Infinity;
    for (const option of options) {
      let prev=nodes[0],length=0;
@@ -491,6 +493,6 @@ let bartenderTick=()=>{}, diagnosticActor=null;
 const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';fpsLabel.textContent='FPS: medindo';document.body.append(fpsLabel);
 let fpsStart=performance.now(),fpsFrames=0,dustLast=0;
 const perf=document.createElement('select');perf.style.cssText='position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 30px);z-index:9999;font-size:12px';for(const [v,t] of [['normal','Normal'],['freeze','André congelado'],['hide','Sem André'],['animated','Cidade animada'],['blank','Teste sem render']]){const o=document.createElement('option');o.value=v;o.textContent=t;perf.append(o);}document.body.append(perf);perf.onchange=()=>{if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';fpsStart=performance.now();fpsFrames=0;};
-let cityInitialized=false;let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(!cityInitialized||perf.value==='animated'){scene.userData.updateCity?.(stamp/1000);cityInitialized=true;}citySum+=performance.now()-cityStart;if(stamp-dustLast>=66){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='animated')bartenderTick();const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
+let cityInitialized=false;let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(!cityInitialized||perf.value==='animated'){scene.userData.updateCity?.(stamp/1000);cityInitialized=true;}citySum+=performance.now()-cityStart;if(stamp-dustLast>=66){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='animated'){if(pendingDestination){walkTo(pendingDestination);pendingDestination=null;}bartenderTick();}const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
 }catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
 
