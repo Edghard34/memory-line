@@ -4,18 +4,21 @@ function sprite(context,key,x,y,width,flip=false){
  context.save();context.translate(Math.round(x),Math.round(y));if(flip)context.scale(-1,1);
  context.imageSmoothingEnabled=false;context.drawImage(img,-Math.round(width/2),-height,width,height);context.restore();
 }
+function campClear(x,y){return Math.abs(x-W/2)<30&&y>H-490||Math.hypot(x-W/2-78,y-H+421)<65|| (Math.abs(y-H+421)<18&&x>W/2&&x<W/2+78)}
 function prepareFloor(zone,random){
  const c=floor.getContext('2d'),bg=c.createLinearGradient(0,34,W,H);
  bg.addColorStop(0,zone[3]);bg.addColorStop(.48,zone[2]);bg.addColorStop(1,zone[3]);
  c.fillStyle=bg;c.fillRect(0,0,W,H);
+ c.fillStyle='#70513a';c.fillRect(W/2-19,H-490,38,490);c.fillRect(W/2,H-435,78,28);c.beginPath();c.ellipse(W/2+78,H-421,57,45,0,0,TAU);c.fill();
  for(let i=0;i<81600;i++){
   const x=Math.floor(random()*W),y=Math.floor(random()*H);
-  const road=Math.abs(x-W/2-Math.sin(y/48)*62)<30;
+  const road=campClear(x,y);
   c.fillStyle=road?(i%2?'#e9ae7920':'#04040920'):(i%2?zone[4]+'2d':'#08070b48');
   c.fillRect(x,y,1+Math.floor(random()*5),1+(i%5===0?1:0));
  }
  for(let i=0;i<2880;i++){
   const x=12+random()*(W-24),y=40+random()*(H-52);
+  if(campClear(x,y))continue;
   c.globalAlpha=.41+random()*.51;sprite(c,choose(zone[6],random),x,y,3+Math.floor(random()*7),random()<.5);
  }
  c.globalAlpha=1;
@@ -23,6 +26,7 @@ function prepareFloor(zone,random){
  for(let y=63;y<H;y+=16){sprite(c,'wall_'+zone[1],6,y,11);sprite(c,'wall_'+zone[1],W-6,y,11)}
  for(let i=0;i<704;i++){
   const x=20+random()*(W-40),y=52+random()*(H-69);
+  if(campClear(x,y))continue;
   const edge=x<55||x>W-55||y>H-42;
   if(!edge&&((x>100&&x<320)||random()>.55))continue;
   if(!edge&&Math.abs(y-113)<17)continue;
@@ -76,7 +80,7 @@ function render(){
   if(k==='ember')light(drop.x,drop.y,16,'#ff8a3c57');
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
- const layers=objects.filter(o=>Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w)}}));
+ const layers=objects.filter(o=>Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);

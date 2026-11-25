@@ -20,12 +20,14 @@ function enter(){
  enemies=[];shots=[];drops=[];objects=[];hazards=[];fx=[];doors=[];spawnQueue=[];
  roomTime=0;stageClock=0;sinceHit=0;doorLock=.7;shake=0;flash=0;cleared=false;fight=run.kind==='combat'||run.kind==='elite'||run.room===4;
  prepareFloor(biome,rng);
+ objects.push({x:W/2+78,y:H-421,k:'fire0',w:26,r:9});
+ HEROES.filter((_,i)=>i!==run.id).forEach((a,i)=>objects.push({x:W/2+78+(i?25:-25),y:H-405,k:a[1]+'0',w:24,r:7,npc:a[0]}));
  fight=true;run.zone=0;run.room=0;run.kind='combat';
  const pool=POOLS[0];
- for(let i=0;i<24;i++){const x=60+rng()*(W-120),y=65+rng()*(H-130);if(Math.hypot(x-player.x,y-player.y)>160&&!objects.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+12))spawn(choose(pool,rng),x,y);}
+ for(let i=0;i<24;i++){const x=60+rng()*(W-120),y=65+rng()*(H-130);if(y<H-550&&Math.hypot(x-player.x,y-player.y)>160&&!objects.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+12))spawn(choose(pool,rng),x,y);}
 
  keep();resumePlay();
- label('Caatinga · Exploração livre',2.1);
+ label('Mata do Avesso · Exploração livre',2.1);
  if(!fight){mode='wait';setRoomDoors();service()}
 }
 function service(){

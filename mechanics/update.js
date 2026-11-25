@@ -21,6 +21,7 @@ function tick(dt){
  input.dash=input.skill=false;
  if(player.dash>0){const a=Math.atan2(player.dy,player.dx);steer(player,Math.cos(a)*278*dt,Math.sin(a)*278*dt);if(rng()<.65)dust(player.x,player.y,'#dc8853',2,29)}
  else {const v=hero[3]*(1+stat('speed'));steer(player,x*v*dt,y*v*dt)}
+ const npc=objects.find(o=>o.npc&&distance(o,player)<28);const talk=$('talk');if(talk){talk.hidden=!npc;talk.onclick=()=>{if(!npc)return;const lines={Luzia:'A mata mudou desde que a última luz se apagou. Fique na trilha até conhecer o terreno.',Zambi:'Ouvi um assobio vindo do norte. Não parecia coisa de gente. Se quiser investigar, siga com cuidado.',Tião:'Pode descansar perto do fogo. Mais adiante vi rastros estranhos entre as árvores.'};const el=panel('dialogue',npc.npc,lines[npc.npc]);buttons(el,[['Entendi',resumePlay]]);talk.hidden=true;};}
  player.walk=Math.hypot(x,y)>.1||player.dash>0?player.walk+dt*9:0;
  if(fight){
   const drain=(sinceHit>7?2.2:sinceHit>3?1.36:.75)*(1-clamp(stat('drain'),-.65,.73));
