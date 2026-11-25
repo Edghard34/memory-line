@@ -14,6 +14,7 @@ function rewardAsh(n){
  run.earned+=n;
 }
 function enter(){
+ ensureInventory();
  campSleep=null;villageGuide=null;$('sleep-fade').style.opacity=0;
  hero=HEROES[run.id];biome=BIOMES[0];
  rng=seeded(run.seed^Math.imul(run.zone*13+run.room+1,943177));
@@ -82,4 +83,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=35;
+window.brasaMapVersion=36;
