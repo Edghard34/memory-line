@@ -4,7 +4,7 @@ function houseGround(im){if(blendedHouseGround.has(im))return blendedHouseGround
 function drawVillageHouse(g,o,foreground){const im=villageHouses[o.house];if(!im.complete||!im.naturalWidth)return;const w=o.w,ht=Math.round(w*im.naturalHeight/im.naturalWidth),x=Math.round(o.x-w/2),y=Math.round(o.y-ht);g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(foreground){g.beginPath();houseMasks[o.house].forEach(([a,b],i)=>i?g.lineTo(x+a*w,y+b*ht):g.moveTo(x+a*w,y+b*ht));g.closePath();g.clip();}g.drawImage(foreground?im:houseGround(im),x,y,w,ht);g.restore();}
 const villageHouses=[1,2,3].map(i=>{const im=new Image();im.src='assets/environment/casa_'+i+'.png?v=29';return im;});
 function bedrollCanvas(g,x,y,green){const a=bedrollArt[green?1:0];g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';for(let j=0;j<27;j++)for(let i=0;i<18;i++){const c=a.palette[parseInt(a.rows[j][i],16)];if(c){g.fillStyle=c;g.fillRect(Math.round(x)-9+i,Math.round(y)-27+j,1,1)}}g.restore();}
-const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
+const nightShade=document.createElement('canvas');nightShade.width=504;nightShade.height=338;
 function sprite(context,key,x,y,width,flip=false){
  const img=images[key];if(!img?.complete||!img.naturalWidth)return;
  const height=Math.max(1,Math.round(width*img.naturalHeight/img.naturalWidth));
@@ -72,7 +72,7 @@ function danger(h){
  if(active)for(let i=0;i<6;i++){const x=h.x+(r()-.5)*h.r*1.3,y=h.y+(r()-.5)*h.r;sprite(g,biome[1]==='cuca'?'p_spit':'p_ember',x,y-Math.sin(globalTime*9+i)*2,4+i%4)}
 }
 function render(){
- g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,420,282);const cx=player?clamp(player.x-210,0,W-420):W/2-210,cy=player?clamp(player.y-141,0,H-282):H*.70-141;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0);for(const o of objects)if(o.house!==undefined)drawVillageHouse(g,o,false);for(const o of objects){if(o.k==='bedroll_a'||o.k==='bedroll_b')bedrollCanvas(g,o.x,o.y+13,o.k==='bedroll_b');} for(const o of objects){if(o.k!=='fire0')continue;if(run?.day)continue;const r=115*(1+.025*Math.sin(globalTime*8)),x=o.x,y=o.y;g.save();g.globalCompositeOperation='screen';const ground=g.createRadialGradient(x,y,0,x,y,r);ground.addColorStop(0,'rgba(255,205,130,.26)');ground.addColorStop(.4,'rgba(255,185,100,.18)');ground.addColorStop(.75,'rgba(230,150,75,.07)');ground.addColorStop(1,'rgba(230,150,75,0)');g.fillStyle=ground;g.fillRect(x-r,y-r,r*2,r*2);g.restore();}
+ g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,504,338);const cx=player?clamp(player.x-252,0,W-504):W/2-252,cy=player?clamp(player.y-169,0,H-338):H*.70-169;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0);for(const o of objects)if(o.house!==undefined)drawVillageHouse(g,o,false);for(const o of objects){if(o.k==='bedroll_a'||o.k==='bedroll_b')bedrollCanvas(g,o.x,o.y+13,o.k==='bedroll_b');} for(const o of objects){if(o.k!=='fire0')continue;if(run?.day)continue;const r=115*(1+.025*Math.sin(globalTime*8)),x=o.x,y=o.y;g.save();g.globalCompositeOperation='screen';const ground=g.createRadialGradient(x,y,0,x,y,r);ground.addColorStop(0,'rgba(255,205,130,.26)');ground.addColorStop(.4,'rgba(255,185,100,.18)');ground.addColorStop(.75,'rgba(230,150,75,.07)');ground.addColorStop(1,'rgba(230,150,75,0)');g.fillStyle=ground;g.fillRect(x-r,y-r,r*2,r*2);g.restore();}
  const title=!run||mode==='menu'||mode==='hero'||mode==='forge'||mode==='codex'||mode==='confirm'||(mode==='settings'&&!player);
  for(const d of doors){
   light(d.x,d.y-7,32,'#ffc75b48');sprite(g,'door_'+biome[1]+'_o',d.x,d.y,28);
@@ -96,7 +96,7 @@ function render(){
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
 
- const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.house!==undefined?o.y-o.w*.24:o.y,run:()=>{if(o.house!==undefined){drawVillageHouse(g,o,true);return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0'&&run?.day){g.save();g.fillStyle='#493a30';g.beginPath();g.ellipse(o.x,o.y-3,9,5,0,0,TAU);g.fill();g.fillStyle='#242321';g.fillRect(o.x-6,o.y-5,12,3);g.fillRect(o.x-2,o.y-8,4,9);g.restore();return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.npc&&o.walk?o.k.slice(0,-1)+[0,1,0,2][Math.floor(o.walk)%4]:o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w,o.facing<0);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
+ const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-252)<310&&Math.abs(o.y-cy-169)<225).map(o=>({y:o.house!==undefined?o.y-o.w*.24:o.y,run:()=>{if(o.house!==undefined){drawVillageHouse(g,o,true);return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0'&&run?.day){g.save();g.fillStyle='#493a30';g.beginPath();g.ellipse(o.x,o.y-3,9,5,0,0,TAU);g.fill();g.fillStyle='#242321';g.fillRect(o.x-6,o.y-5,12,3);g.fillRect(o.x-2,o.y-8,4,9);g.restore();return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.npc&&o.walk?o.k.slice(0,-1)+[0,1,0,2][Math.floor(o.walk)%4]:o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w,o.facing<0);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);
@@ -127,8 +127,8 @@ function render(){
  // Night shading is applied to the scene, with a genuine opening in the ambient shadow at each fire.
  const shade=nightShade;
  const n=shade.getContext('2d');
- n.setTransform(1,0,0,1,0,0);n.clearRect(0,0,420,282);
- n.globalCompositeOperation='source-over';n.fillStyle='#10182cb5';n.fillRect(0,0,420,282);
+ n.setTransform(1,0,0,1,0,0);n.clearRect(0,0,504,338);
+ n.globalCompositeOperation='source-over';n.fillStyle='#10182cb5';n.fillRect(0,0,504,338);
  for(const o of objects){if(o.k!=='fire0')continue;
   const f=Math.sin(globalTime*8.3)*.035+Math.sin(globalTime*13.7)*.02;
   const x=o.x-Math.round(cx),y=o.y-Math.round(cy),r=135*(1+f);
@@ -152,11 +152,11 @@ function render(){
  }
  if(flash>0){g.fillStyle='rgba(255,199,106,'+flash*.38+')';g.fillRect(0,0,W,H)}
  g.setTransform(1,0,0,1,0,0);
- const vw=canvas.width,vh=canvas.height,fit=Math.max(vw/420,vh/282),sw=Math.floor(420*fit),sh=Math.floor(282*fit);
+ const vw=canvas.width,vh=canvas.height,fit=Math.max(vw/504,vh/338),sw=Math.floor(504*fit),sh=Math.floor(338*fit);
  const sx=Math.floor((vw-sw)/2),sy=Math.floor((vh-sh)/2);
  view={x:sx,y:sy,w:sw,h:sh};ctx.fillStyle='#110e14';ctx.fillRect(0,0,vw,vh);ctx.imageSmoothingEnabled=false;
  const jitter=0;
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=36;
+window.brasaRenderVersion=37;
