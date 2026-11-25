@@ -21,7 +21,7 @@ function steer(entity,x,y,pass=false){
  entity.x=clamp(entity.x,16,W-16);entity.y=clamp(entity.y,45,H-23);
 }
 function attack(){
- if(run.id!==2||shots.some(s=>s.team==='you'))return;
+ if(run.id!==2){player.fireCD=hero[4];player.punch=.22;const target=enemies.filter(e=>e.hp>0&&distance(player,e)<25).sort((a,b)=>distance(player,a)-distance(player,b))[0];if(target){player.facing=target.x>=player.x?1:-1;hurt(target,hero[5]+stat('damage'));}return;}if(shots.some(s=>s.team==='you'))return;
  player.count++;
  const target=enemies.reduce((a,b)=>b.hp>0&&(!a||distance(player,b)<distance(player,a))?b:a,null);
  let a=Math.atan2(player.dy,player.dx);

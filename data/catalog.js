@@ -1,6 +1,6 @@
 const HEROES = [
- ['Luzia','luzia',100,91,.46,20,'Sem ataque à distância','Exploração.'],
- ['Zambi','zambi',120,83,.65,32,'Sem ataque à distância','Exploração.'],
+ ['Luzia','luzia',100,91,.46,20,'Soco','Ataque corpo a corpo.'],
+ ['Zambi','zambi',120,83,.65,32,'Soco','Ataque corpo a corpo.'],
  ['Tião','tiao',87,101,.77,13,'Disparo','Uma chama por vez.']
 ];
 const BIOMES = [

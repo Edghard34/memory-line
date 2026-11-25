@@ -13,7 +13,7 @@ function clearFight(){
 function collect(d){if(d.k==='ember')heal(d.value+stat('ember'));else if(d.k==='gota')rewardAsh(d.value);else run.coins+=d.value}
 function tick(dt){
  run.time+=dt;roomTime+=dt;stageClock+=dt;sinceHit+=dt;doorLock-=dt;
- player.inv-=dt;player.dashCD-=dt;player.skillCD-=dt;player.fireCD-=dt;player.dash-=dt;
+ player.punch=Math.max(0,(player.punch||0)-dt);player.inv-=dt;player.dashCD-=dt;player.skillCD-=dt;player.fireCD-=dt;player.dash-=dt;
  const k=input.keys;
  let x=clamp(input.cx+(k.has('d')||k.has('arrowright')?1:0)-(k.has('a')||k.has('arrowleft')?1:0),-1,1);
  let y=clamp(input.cy+(k.has('s')||k.has('arrowdown')?1:0)-(k.has('w')||k.has('arrowup')?1:0),-1,1);
