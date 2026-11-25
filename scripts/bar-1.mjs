@@ -314,7 +314,7 @@ let bartenderTick=()=>{};
 (async()=>{
  const {GLTFLoader}=await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js');
  const gltf=await new GLTFLoader().loadAsync('../assets/models/andre.glb');
- const man=gltf.scene;scene.add(man);man.position.set(-1.30,0,-1.43);
+ const man=gltf.scene;scene.add(man);man.position.set(-1.30,0,-1.19);
  man.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true;o.frustumCulled=false;}});
  const bone=n=>{let found;man.traverse(o=>{if(o.name.replace(/[^a-z0-9]/gi,'').endsWith(n))found=o;});return found;};
  const mixer=new T.AnimationMixer(man),idle=gltf.animations.find(a=>a.name==='Idle');
@@ -335,15 +335,29 @@ let bartenderTick=()=>{};
    const upperLength = shoulder.distanceTo(elbow);
    const lowerLength = elbow.distanceTo(wrist);
    const outward = shoulder.x >= man.position.x ? 1 : -1;
-   const phase = time * 1.35 + (arm.side === 'Left' ? 0 : 1.2);
-   const motion = Math.sin(phase);
-   const upperDirection = new T.Vector3(outward * .24, -1, .24 + .06 * motion).normalize();
-   aim(arm.upper, arm.lower, shoulder.addScaledVector(upperDirection, upperLength));
-   const forearmDirection = new T.Vector3(-outward * .10, -.48, .90 + .07 * Math.sin(phase - .24)).normalize();
-   aim(arm.lower, arm.hand, arm.lower.getWorldPosition(v()).addScaledVector(forearmDirection, lowerLength));
-   if (arm.middle) {
-     const fingers = new T.Vector3(-outward * .17, -.65, .82 + .06 * Math.sin(phase - .40));
-     aim(arm.hand, arm.middle, arm.hand.getWorldPosition(v()).add(fingers));
+   // Keep each palm planted just inside the bartender's edge of the slab.
+   const target = new T.Vector3(-1.30 + outward * .235, 1.115, -.945);
+   const axis = target.clone().sub(shoulder);
+   const distance = axis.length();
+   axis.normalize();
+   const reach = Math.min(distance, upperLength + lowerLength - .0001);
+   const along = (upperLength ** 2 - lowerLength ** 2 + reach ** 2) / (2 * reach);
+   const pole = new T.Vector3(outward * (.32 + .015 * Math.sin(time)), -1, -.32);
+   pole.addScaledVector(axis, -pole.dot(axis)).normalize();
+   const hinge = shoulder.clone().addScaledVector(axis, along)
+     .addScaledVector(pole, Math.sqrt(Math.max(0, upperLength ** 2 - along ** 2)));
+   aim(arm.upper, arm.lower, hinge);
+   aim(arm.lower, arm.hand, target);
+   if (arm.middle && arm.thumb) {
+     const forward = new T.Vector3(-outward * .12, -.085, 1).normalize();
+     const hand = arm.hand.getWorldPosition(v());
+     aim(arm.hand, arm.middle, hand.clone().add(forward));
+     const thumb = arm.thumb.getWorldPosition(v()).sub(hand);
+     thumb.addScaledVector(forward, -thumb.dot(forward)).normalize();
+     const inward = new T.Vector3(-outward, 0, 0);
+     inward.addScaledVector(forward, -inward.dot(forward)).normalize();
+     const roll = Math.atan2(forward.dot(thumb.clone().cross(inward)), thumb.dot(inward));
+     rotateWorld(arm.hand, new T.Quaternion().setFromAxisAngle(forward, roll));
    }
  }
  let last = performance.now(), elapsed = 0;
