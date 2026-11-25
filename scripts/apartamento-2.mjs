@@ -42,7 +42,7 @@ function kitchen(scene) {
   // Animated layered city vista, rendered to the window texture.
   const city=document.createElement('canvas');city.width=768;city.height=512;
   const ctx=city.getContext('2d'), W=768,Hh=512;
-  const back=new T.CanvasTexture(city);back.colorSpace=T.SRGBColorSpace;back.anisotropy=4;
+  const back=new T.CanvasTexture(city);back.colorSpace=T.SRGBColorSpace;back.anisotropy=1;back.generateMipmaps=false;back.minFilter=T.LinearFilter;
   const buildings=[], stars=[], clouds=[];
   for(let i=0;i<48;i++)stars.push([rand()*W,rand()*180,.2+rand()*.55]);
   for(let i=0;i<7;i++)clouds.push([rand()*1000,25+rand()*145,65+rand()*130]);
@@ -424,7 +424,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enable
 const envCanvas=document.createElement('canvas');envCanvas.width=256;envCanvas.height=128;const ec=envCanvas.getContext('2d');const eg=ec.createLinearGradient(0,0,0,128);eg.addColorStop(0,'#71839c');eg.addColorStop(.5,'#454c58');eg.addColorStop(1,'#232126');ec.fillStyle=eg;ec.fillRect(0,0,256,128);ec.fillStyle='#c4d4ed';ec.fillRect(38,35,24,37);const et=new T.CanvasTexture(envCanvas);et.colorSpace=T.SRGBColorSpace;et.mapping=T.EquirectangularReflectionMapping;const pm=new T.PMREMGenerator(renderer);const env=pm.fromEquirectangular(et);scene.environment=env.texture;et.dispose();pm.dispose();
 const camera=new T.OrthographicCamera(-5,5,5,-5,.1,50);
 scene.add(new T.HemisphereLight(0xb5c0d0,0x77777c,.48));
-const sun=new T.DirectionalLight(0xc8d4e5,.09);sun.position.set(-7,4.1,-2);sun.castShadow=true;scene.add(sun);Object.assign(sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:.1,far:24});sun.shadow.normalBias=.012;sun.shadow.bias=-.00015;sun.shadow.mapSize.setScalar(2048);
+const sun=new T.DirectionalLight(0xc8d4e5,.09);sun.position.set(-7,4.1,-2);sun.castShadow=true;scene.add(sun);Object.assign(sun.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:.1,far:24});sun.shadow.normalBias=.012;sun.shadow.bias=-.00015;sun.shadow.mapSize.setScalar(2048);sun.shadow.autoUpdate=false;sun.shadow.needsUpdate=true;
 const fill=new T.DirectionalLight(0xb9c0cc,.065);fill.position.set(4,4,6);scene.add(fill);kitchen(scene);scene.traverse(o=>{if(o.isMesh&&o.material.isMeshStandardMaterial)o.material.envMapIntensity=.38;});
 // Soft rectangular moon projection, derived from the actual window aperture.
 const raySlope=new T.Vector3(-.26,-.95,1.0);
@@ -444,7 +444,157 @@ const rocker=part(switchRoot,.069,.095,.018,0,0,.034,plateMat);rocker.rotation.x
 const roomLight=new T.PointLight(0xffead5,0,10,2);roomLight.position.set(0,2.58,0);roomLight.castShadow=true;roomLight.shadow.mapSize.setScalar(512);roomLight.shadow.bias=-.001;roomLight.shadow.autoUpdate=false;scene.add(roomLight);
 let lampOn=false;
 function toggleLamp(){lampOn=!lampOn;rocker.rotation.x=lampOn?.13:-.13;roomLight.intensity=lampOn?22:0;if(lampOn)roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent=lampOn?'Luz acesa · Toque no interruptor para apagar':'Luz apagada · Toque no interruptor para acender';}
-const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:()=>{}});document.querySelector('#homeBtn').onclick=c.home;
-let w=0,h=0;function frame(){if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();scene.userData.updateCity?.(performance.now()/1000);updateDust(performance.now()/1000);renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
-}catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
+let walkTo=()=>{},pendingDestination=null;
+const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:p=>{if(p)pendingDestination=p;}});document.querySelector('#homeBtn').onclick=c.home;
+let bartenderTick=()=>{}, diagnosticActor=null;
+(async()=>{
+ const {GLTFLoader}=await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js');
+ const gltf=await new GLTFLoader().loadAsync('../assets/models/andre.glb');
+ const man=gltf.scene;diagnosticActor=man;scene.add(man);man.position.set(-.55,0,-.25);
+ man.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true;o.frustumCulled=false;}});
+ const bone=n=>{let found;man.traverse(o=>{if(o.name.replace(/[^a-z0-9]/gi,'').endsWith(n))found=o;});return found;};
+ const mixer=new T.AnimationMixer(man),idle=gltf.animations.find(a=>a.name==='Idle');
+ if(idle)mixer.clipAction(idle).play();
+ mixer.update(.1);man.updateMatrixWorld(true);
+ const head=bone('Head'),hips=bone('Hips');
+ // Face the customer side (+Z), using the model's eye positions to determine forward.
+ const le=bone('LeftEye'),re=bone('RightEye');
+ if(le&&re&&head){const eye=le.getWorldPosition(new T.Vector3()).add(re.getWorldPosition(new T.Vector3())).multiplyScalar(.5).sub(head.getWorldPosition(new T.Vector3()));if(Math.abs(eye.z)+Math.abs(eye.x)>.01)man.rotation.y=-Math.atan2(eye.x,eye.z);}
+ const motion = await fetch('../assets/animations/andre-walk.json?v=3').then(response => {
+   if (!response.ok) throw Error('Falha ao carregar a caminhada');
+   return response.json();
+ });
+ const tracks = Object.entries(motion.rotations).map(([name, values]) =>
+   new T.QuaternionKeyframeTrack(bone(name).name + '.quaternion', motion.times, values));
+ tracks.push(new T.VectorKeyframeTrack(hips.name + '.position', motion.times, motion.hips));
+ const walking = mixer.clipAction(new T.AnimationClip('André caminhada', motion.duration, tracks));
+ walking.play();
+ walking.paused = true;
+ walking.setEffectiveWeight(0);
+ // Keep the lower body in a stable idle pose while the upper body breathes.
+ const lowerJoints=['Hips','LeftUpLeg','RightUpLeg','LeftLeg','RightLeg','LeftFoot','RightFoot','LeftToeBase','RightToeBase'].map(bone).filter(Boolean);
+ const lowerNames=new Set(lowerJoints.map(j=>j.name));
+ const resting = idle && mixer.clipAction(idle);
+ if(resting){
+   for(const track of idle.tracks){
+     const joint=track.name.slice(0,track.name.lastIndexOf('.'));
+     if(!lowerNames.has(joint))continue;
+     const sample=track.createInterpolant().evaluate(.1);
+     const size=track.getValueSize();
+     for(let k=0;k<track.values.length;k+=size)track.values.set(sample,k);
+   }
+ }
+ const facingOffset = man.rotation.y;
+ const obstacles=[[-2.24,-1.10,-1.98,.14],[-2.24,-1.43,.16,1.30],[-2.24,-1.43,1.30,1.98],[-.98,-.16,-1.98,-1.23],[-1.08,.12,1.22,1.98],[-.73,-.23,.43,.99],[.12,1.02,-.19,1.09],[1.74,2.24,.12,.98],[.78,2.24,-1.98,-.68]].map(([x0,x1,z0,z1])=>[x0-.12,x1+.12,z0-.12,z1+.12]);
+ const inside=p=>obstacles.some(([x0,x1,z0,z1])=>p.x>x0&&p.x<x1&&p.z>z0&&p.z<z1);
+ function blocked(a,b){for(const [x0,x1,z0,z1] of obstacles){let lo=0,hi=1;for(let k=0;k<2;k++){const axis=k?'z':'x',min=k?z0:x0,max=k?z1:x1,d=b[axis]-a[axis];if(Math.abs(d)<1e-8){if(a[axis]<=min||a[axis]>=max){hi=-1;break;}}else{const u=(min-a[axis])/d,v=(max-a[axis])/d;lo=Math.max(lo,Math.min(u,v));hi=Math.min(hi,Math.max(u,v));}}if(hi-lo>1e-6)return true;}return false;}
+ const nav=man.position.clone();
+ const shoeGeometry={"Left": [["Foot", 0.10156700015068054, -0.05499900132417679, -0.04305500164628029], ["Foot", 0.10195200145244598, -0.020457999780774117, -0.0549129992723465], ["Foot", 0.10230699926614761, 0.008967000059783459, -0.05615900084376335], ["Foot", 0.10287699848413467, 0.04948100075125694, -0.06033800169825554], ["ToeBase", -0.03466000035405159, -0.0015940000303089619, -0.0606050007045269], ["ToeBase", 0.03679399937391281, -0.0014100000262260437, -0.04430200159549713], ["ToeBase", 0.041297998279333115, -0.0005670000100508332, 0.03683599829673767], ["ToeBase", 0.07123800367116928, 0.003942000214010477, 0.026809999719262123]], "Right": [["Foot", 0.10156700015068054, -0.05499900132417679, 0.04305399954319], ["Foot", 0.101951003074646, -0.020459000021219254, 0.0549129992723465], ["Foot", 0.10230699926614761, 0.008967000059783459, 0.05615900084376335], ["Foot", 0.10287699848413467, 0.04948100075125694, 0.06033800169825554], ["ToeBase", -0.03466099873185158, -0.0015940000303089619, 0.0606050007045269], ["ToeBase", 0.036793000996112823, -0.0014100000262260437, 0.04430200159549713], ["ToeBase", 0.041297998279333115, -0.0005670000100508332, -0.03683499991893768], ["ToeBase", 0.07123800367116928, 0.003942000214010477, -0.026808999478816986]]};
+ const probes=Object.entries(shoeGeometry).flatMap(([side,points])=>points.map(([joint,x,y,z])=>({
+   bone:bone(side+joint),local:new T.Vector3(x,y,z),previous:new T.Vector3(),current:new T.Vector3()
+ })));
+ let previousContact=false;
+ const contactDelta=new T.Vector3(), offsetScratch=new T.Vector3(), nextScratch=new T.Vector3(), navScratch=new T.Vector3();
+ function groundShoes(lockHorizontal){
+   man.updateMatrixWorld(true);
+   let lowest=probes[0];
+   for(const p of probes){
+     p.current.copy(p.local).applyMatrix4(p.bone.matrixWorld);
+     if(p.current.y<lowest.current.y)lowest=p;
+   }
+   contactDelta.set(0,0,0);
+   if(previousContact && lockHorizontal){
+     contactDelta.copy(lowest.previous).sub(lowest.current);
+     contactDelta.y=0;
+     const offset=offsetScratch.copy(man.position).add(contactDelta).sub(nav);
+     offset.y=0;
+     offset.clampLength(0,.16);
+     const next=nextScratch.copy(nav).add(offset);
+     if(!blocked(nav,next) && Math.abs(next.x)<=2.02 && next.z>=-1.72 && next.z<=1.78)
+       contactDelta.copy(next).sub(man.position);
+     else contactDelta.copy(nav).sub(man.position);
+   }
+   contactDelta.y=-lowest.current.y;
+   man.position.add(contactDelta);
+   for(const p of probes)p.previous.copy(p.current).add(contactDelta);
+   previousContact=true;
+ }
+ let route=[], speed=0, heading=0, distance=0, weight=0;
+ walkTo=p=>{if(!p)return;const goal=new T.Vector3(T.MathUtils.clamp(p.x,-2.02,2.02),0,T.MathUtils.clamp(p.z,-1.72,1.78));if(inside(goal))return;if(!blocked(nav,goal)){route=[goal];return;}const nodes=[nav,goal];for(const [x0,x1,z0,z1] of obstacles)for(const x of [x0-.025,x1+.025])for(const z of [z0-.025,z1+.025]){const q=new T.Vector3(x,0,z);if(Math.abs(x)<=2.02&&z>=-1.72&&z<=1.78&&!inside(q))nodes.push(q);}const d=nodes.map(()=>Infinity),prev=nodes.map(()=>-1),used=new Set();d[0]=0;for(let k=0;k<nodes.length;k++){let u=-1;for(let n=0;n<nodes.length;n++)if(!used.has(n)&&(u<0||d[n]<d[u]))u=n;if(u<0||!Number.isFinite(d[u]))break;if(u===1)break;used.add(u);for(let v=1;v<nodes.length;v++){if(used.has(v)||blocked(nodes[u],nodes[v]))continue;const cost=d[u]+nodes[u].distanceTo(nodes[v]);if(cost<d[v]){d[v]=cost;prev[v]=u;}}}if(prev[1]>=0){const next=[];for(let n=1;n>0;n=prev[n])next.unshift(nodes[n]);route=next;}};
+ const spine=bone('Spine2');
+ const up=new T.Vector3(0,1,0), twist=new T.Quaternion(), parentRotation=new T.Quaternion(), inverseParent=new T.Quaternion(), forwardScratch=new T.Vector3(), toeScratch=new T.Vector3();
+ const soft=document.createElement('canvas');soft.width=soft.height=64;
+ const brush=soft.getContext('2d'),gradient=brush.createRadialGradient(32,32,0,32,32,32);
+ gradient.addColorStop(0,'rgba(0,0,0,.48)');gradient.addColorStop(1,'rgba(0,0,0,0)');
+ brush.fillStyle=gradient;brush.fillRect(0,0,64,64);
+ const shadowMap=new T.CanvasTexture(soft);
+ const footprints=['Left','Right'].map(side=>{
+   const shadow=new T.Mesh(new T.PlaneGeometry(.28,.38),new T.MeshBasicMaterial({map:shadowMap,transparent:true,depthWrite:false}));
+   shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+   return {foot:bone(side+'Foot'),toe:bone(side+'ToeBase'),shadow};
+ });
+ let bank=0, smoothLead=0, yawRate=0;
+ let last=performance.now();
+ bartenderTick=()=>{
+   const now=performance.now(), dt=Math.min(.12,(now-last)/1000); last=now;
+   let step=0,turnStep=0,torsoLead=0;
+   if (route.length) {
+     const goal=route[0],dx=goal.x-nav.x,dz=goal.z-nav.z,len=Math.hypot(dx,dz);
+     const desired=Math.atan2(dx,dz);
+     const turn=Math.atan2(Math.sin(desired-heading),Math.cos(desired-heading));
+     const curvature=Math.min(1,Math.abs(turn)/1.5);
+     const cruise=Math.min(1.12-.72*curvature,Math.sqrt(4.4*len));
+     speed+=T.MathUtils.clamp(cruise-speed,-3.2*dt,2.2*dt);
+     const targetYawRate=T.MathUtils.clamp(turn*5,-2.8,2.8);
+     yawRate+=(targetYawRate-yawRate)*(1-Math.exp(-12*dt));
+     const yaw=Math.sign(yawRate)===Math.sign(turn)?Math.sign(turn)*Math.min(Math.abs(turn),Math.abs(yawRate)*dt):0;
+     heading+=yaw;
+     turnStep=Math.abs(yaw)*.29;
+     torsoLead=T.MathUtils.clamp(turn*.22,-.28,.28);
+     man.rotation.y=facingOffset+heading;
+     step=Math.min(len,speed*dt,(curvature>.15?Math.max(.06,len*2.5):1.2)*dt)*(1-.85*curvature);
+     const next=navScratch.copy(nav);
+     next.x+=Math.sin(heading)*step; next.z+=Math.cos(heading)*step;
+     if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(nav,next)) {step=0;route=[];speed=0;}
+     else { man.position.x+=next.x-nav.x; man.position.z+=next.z-nav.z; nav.copy(next); }
+     if(Math.hypot(goal.x-nav.x,goal.z-nav.z)<.012) route.shift();
+   } else {speed=0;yawRate=0;}
+   distance+=Math.hypot(step,turnStep);
+   const phase=(distance%motion.stride)/motion.stride;
+   let low=0,high=motion.travel.length;while(low<high){const mid=(low+high)>>>1;if(motion.travel[mid]>phase)high=mid;else low=mid+1;}const upper=low===motion.travel.length?-1:low;
+   const i=upper<1?motion.travel.length-2:upper-1;
+   walking.time=T.MathUtils.lerp(motion.times[i],motion.times[i+1],(phase-motion.travel[i])/(motion.travel[i+1]-motion.travel[i]));
+   const blend=T.MathUtils.clamp(Math.hypot(step,turnStep)/Math.max(dt,.00001)/.38,0,1);
+   weight+=(blend-weight)*(1-Math.exp(-14*dt));
+   if(blend===0 && weight<.001)weight=0;
+   walking.setEffectiveWeight(weight);
+   if(resting) resting.setEffectiveWeight(1-weight);
+   mixer.update(dt);
+   smoothLead+=(torsoLead-smoothLead)*(1-Math.exp(-8*dt));
+   if(spine && Math.abs(smoothLead)>.001){
+     spine.parent.getWorldQuaternion(parentRotation);
+     twist.setFromAxisAngle(up,smoothLead*weight);
+     spine.quaternion.premultiply(inverseParent.copy(parentRotation).invert().multiply(twist).multiply(parentRotation));
+   }
+   bank+=(T.MathUtils.clamp(smoothLead*.55,-.15,.15)-bank)*(1-Math.exp(-7*dt));
+   if(spine && Math.abs(bank)>.001){
+     const forward=forwardScratch.set(Math.sin(heading),0,Math.cos(heading));
+     const parent=spine.parent.getWorldQuaternion(parentRotation);
+     spine.quaternion.premultiply(inverseParent.copy(parent).invert().multiply(twist.setFromAxisAngle(forward,-bank)).multiply(parent));
+   }
+   groundShoes(weight>0);
+   for(const {foot,toe,shadow} of footprints){
+     shadow.visible=man.visible;
+     shadow.position.setFromMatrixPosition(foot.matrixWorld).add(contactDelta);
+     if(toe)shadow.position.lerp(toeScratch.setFromMatrixPosition(toe.matrixWorld).add(contactDelta),.55);
+     shadow.material.opacity=T.MathUtils.clamp(1.25-shadow.position.y*4,.18,1);
+     shadow.position.y=.003;shadow.rotation.z=-heading;
+   }
+ };
+ roomLight.shadow.needsUpdate=true;
+ document.querySelector('#status').textContent='Toque no chão para André caminhar · Arraste para girar';
+})().catch(e=>{document.querySelector('#status').textContent='Erro ao carregar bartender: '+e.message;console.error(e)});
 
+const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';document.body.append(fpsLabel);
+let w=0,h=0,start=performance.now(),frames=0,dustLast=0,cityReady=false;function frame(){const now=performance.now();frames++;if(now-start>=1000){fpsLabel.textContent='FPS: '+Math.round(frames*1000/(now-start))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri';frames=0;start=now;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();if(!cityReady){scene.userData.updateCity?.(now/1000);cityReady=true;}if(now-dustLast>=66){updateDust(now/1000);dustLast=now;}if(pendingDestination&&diagnosticActor){walkTo(pendingDestination);pendingDestination=null;}bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
+}catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
