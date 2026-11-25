@@ -328,9 +328,37 @@ let bartenderTick=()=>{};
  const v=()=>new T.Vector3();
  function rotateWorld(b,q){const p=b.parent.getWorldQuaternion(new T.Quaternion());b.quaternion.premultiply(p.clone().invert().multiply(q).multiply(p));b.updateMatrixWorld(true);}
  function aim(b,child,target){const p=b.getWorldPosition(v()),a=child.getWorldPosition(v()).sub(p).normalize(),d=target.clone().sub(p).normalize();rotateWorld(b,new T.Quaternion().setFromUnitVectors(a,d));}
- function solve(a,target){const p=a.upper.getWorldPosition(v()),e=a.lower.getWorldPosition(v()),w=a.hand.getWorldPosition(v());const l=p.distanceTo(e),m=e.distanceTo(w),dir=target.clone().sub(p),d=Math.min(dir.length(),l+m-.001);dir.normalize();const along=(l*l-m*m+d*d)/(2*d);const bend=new T.Vector3(a.side==='Left'?.25:-.25,-1,-.15);bend.addScaledVector(dir,-bend.dot(dir)).normalize();const elbow=p.clone().addScaledVector(dir,along).addScaledVector(bend,Math.sqrt(Math.max(0,l*l-along*along)));aim(a.upper,a.lower,elbow);aim(a.lower,a.hand,target);if(a.middle){aim(a.hand,a.middle,a.hand.getWorldPosition(v()).add(new T.Vector3(0,0,1)));if(a.thumb){const h=a.hand.getWorldPosition(v()),t=a.thumb.getWorldPosition(v()).sub(h);const angle=Math.atan2(t.y,t.x);const desired=a.side==='Left'?Math.PI:0;rotateWorld(a.hand,new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),desired-angle));}}}
- let last=performance.now();bartenderTick=()=>{const now=performance.now();mixer.update(Math.min(.05,(now-last)/1000));last=now;man.updateMatrixWorld(true);for(const a of arms){if(!a.upper||!a.lower||!a.hand)continue;const x=a.upper.getWorldPosition(v()).x;solve(a,new T.Vector3(-1.30+(x>-1.30?.29:-.29),1.125,-.94));}};
- roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent='Bartender · teste de apoio das mãos';
+ function poseArm(arm, time) {
+   const shoulder = arm.upper.getWorldPosition(v());
+   const elbow = arm.lower.getWorldPosition(v());
+   const wrist = arm.hand.getWorldPosition(v());
+   const upperLength = shoulder.distanceTo(elbow);
+   const lowerLength = elbow.distanceTo(wrist);
+   const outward = shoulder.x >= man.position.x ? 1 : -1;
+   const phase = time * 1.35 + (arm.side === 'Left' ? 0 : 1.2);
+   const motion = Math.sin(phase);
+   const upperDirection = new T.Vector3(outward * .24, -1, .24 + .06 * motion).normalize();
+   aim(arm.upper, arm.lower, shoulder.addScaledVector(upperDirection, upperLength));
+   const forearmDirection = new T.Vector3(-outward * .10, -.48, .90 + .07 * Math.sin(phase - .24)).normalize();
+   aim(arm.lower, arm.hand, arm.lower.getWorldPosition(v()).addScaledVector(forearmDirection, lowerLength));
+   if (arm.middle) {
+     const fingers = new T.Vector3(-outward * .17, -.65, .82 + .06 * Math.sin(phase - .40));
+     aim(arm.hand, arm.middle, arm.hand.getWorldPosition(v()).add(fingers));
+   }
+ }
+ let last = performance.now(), elapsed = 0;
+ bartenderTick = () => {
+   const now = performance.now();
+   const dt = Math.min(.05, (now - last) / 1000);
+   last = now;
+   elapsed += dt;
+   mixer.update(dt);
+   man.updateMatrixWorld(true);
+   for (const arm of arms) {
+     if (arm.upper && arm.lower && arm.hand) poseArm(arm, elapsed);
+   }
+ };
+ roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent='André · Laboratório do bar';
 })().catch(e=>{document.querySelector('#status').textContent='Erro ao carregar bartender: '+e.message;console.error(e)});
 
 let w=0,h=0;function frame(){if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();scene.userData.updateCity?.(performance.now()/1000);updateDust(performance.now()/1000);bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
