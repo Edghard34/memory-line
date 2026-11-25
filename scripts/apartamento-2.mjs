@@ -481,7 +481,7 @@ const plateMat=new T.MeshStandardMaterial({color:0xd4d3ce,roughness:.58});
 part(switchRoot,.125,.17,.018,0,0,.009,plateMat);
 part(switchRoot,.083,.115,.013,0,0,.022,new T.MeshStandardMaterial({color:0x77797a,roughness:.65}));
 const rocker=part(switchRoot,.069,.095,.018,0,0,.034,plateMat);rocker.rotation.x=-.13;
-const roomLight=new T.PointLight(0xffead5,0,10,2);roomLight.position.set(0,2.58,0);roomLight.castShadow=true;roomLight.shadow.mapSize.setScalar(512);roomLight.shadow.bias=-.001;roomLight.shadow.autoUpdate=false;scene.add(roomLight);
+const roomLight=new T.PointLight(0xffead5,0,10,2);roomLight.position.set(0,2.58,0);roomLight.castShadow=false;roomLight.shadow.mapSize.setScalar(512);roomLight.shadow.bias=-.001;roomLight.shadow.autoUpdate=false;scene.add(roomLight);
 let lampOn=false;
 function toggleLamp(){lampOn=!lampOn;rocker.rotation.x=lampOn?.13:-.13;roomLight.intensity=lampOn?22:0;if(lampOn)roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent=lampOn?'Luz acesa · Toque no interruptor para apagar':'Luz apagada · Toque no interruptor para acender';}
 let walkTo=()=>{},pendingDestination=null;
