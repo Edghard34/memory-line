@@ -1,5 +1,7 @@
 const houseMasks=[[[.08,.25],[.24,.10],[.72,.10],[.79,.06],[.84,.13],[.84,.32],[.91,.40],[.91,.64],[.77,.76],[.22,.76],[.12,.64]],[[.10,.35],[.31,.18],[.85,.18],[.91,.53],[.85,.76],[.24,.76],[.13,.64]],[[.08,.36],[.33,.15],[.86,.15],[.92,.54],[.85,.76],[.20,.76],[.10,.65]]];
-function drawVillageHouse(g,o,foreground){const im=villageHouses[o.house];if(!im.complete||!im.naturalWidth)return;const w=o.w,ht=Math.round(w*im.naturalHeight/im.naturalWidth),x=Math.round(o.x-w/2),y=Math.round(o.y-ht);g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(foreground){g.beginPath();houseMasks[o.house].forEach(([a,b],i)=>i?g.lineTo(x+a*w,y+b*ht):g.moveTo(x+a*w,y+b*ht));g.closePath();g.clip();}g.drawImage(im,x,y,w,ht);g.restore();}
+const blendedHouseGround=new Map();
+function houseGround(im){if(blendedHouseGround.has(im))return blendedHouseGround.get(im);const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const a=c.getContext('2d');a.drawImage(im,0,0);const w=c.width,h=c.height;const d=a.getImageData(0,0,w,h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;const nx=(x/w-.5)/.5,ny=(y/h-.56)/.56;const r=Math.hypot(nx,ny);const jitter=.035*Math.sin(x*.19+y*.13)+.025*Math.cos(x*.31-y*.23);const f=Math.max(0,Math.min(1,(.99-r+jitter)/.28));const edge=Math.min(x/w,1-x/w,y/h,1-y/h);d.data[i+3]*=Math.min(f,Math.min(1,edge/.09));}a.putImageData(d,0,0);blendedHouseGround.set(im,c);return c;}
+function drawVillageHouse(g,o,foreground){const im=villageHouses[o.house];if(!im.complete||!im.naturalWidth)return;const w=o.w,ht=Math.round(w*im.naturalHeight/im.naturalWidth),x=Math.round(o.x-w/2),y=Math.round(o.y-ht);g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(foreground){g.beginPath();houseMasks[o.house].forEach(([a,b],i)=>i?g.lineTo(x+a*w,y+b*ht):g.moveTo(x+a*w,y+b*ht));g.closePath();g.clip();}g.drawImage(foreground?im:houseGround(im),x,y,w,ht);g.restore();}
 const villageHouses=[1,2,3].map(i=>{const im=new Image();im.src='assets/environment/casa_'+i+'.png?v=29';return im;});
 function bedrollCanvas(g,x,y,green){const a=bedrollArt[green?1:0];g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';for(let j=0;j<27;j++)for(let i=0;i<18;i++){const c=a.palette[parseInt(a.rows[j][i],16)];if(c){g.fillStyle=c;g.fillRect(Math.round(x)-9+i,Math.round(y)-27+j,1,1)}}g.restore();}
 const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
@@ -158,4 +160,4 @@ function render(){
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=30;
+window.brasaRenderVersion=31;
