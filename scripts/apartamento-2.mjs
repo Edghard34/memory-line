@@ -536,7 +536,9 @@ let bartenderTick=()=>{}, diagnosticActor=null;
  let previousContact=false;
  const contactDelta=new T.Vector3(), offsetScratch=new T.Vector3(), nextScratch=new T.Vector3(), navScratch=new T.Vector3();
  function groundShoes(lockHorizontal){
-   man.updateMatrixWorld(true);
+   man.updateWorldMatrix(true,false);
+   for(const p of probes)p.bone.updateWorldMatrix(true,false);
+   for(const {foot,toe} of footprints){foot.updateWorldMatrix(true,false);if(toe)toe.updateWorldMatrix(true,false);}
    let lowest=probes[0];
    for(const p of probes){
      p.current.copy(p.local).applyMatrix4(p.bone.matrixWorld);
@@ -636,5 +638,5 @@ let bartenderTick=()=>{}, diagnosticActor=null;
 })().catch(e=>{document.querySelector('#status').textContent='Erro ao carregar bartender: '+e.message;console.error(e)});
 
 const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';document.body.append(fpsLabel);
-let w=0,h=0,start=performance.now(),frames=0,dustLast=0,cityReady=false;function frame(){const now=performance.now();frames++;if(now-start>=1000){fpsLabel.textContent='V05 | FPS: '+Math.round(frames*1000/(now-start))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri';frames=0;start=now;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();if(!cityReady){scene.userData.updateCity?.(now/1000);cityReady=true;}if(now-dustLast>=66){updateDust(now/1000);dustLast=now;}if(pendingDestination&&diagnosticActor){walkTo(pendingDestination);pendingDestination=null;}bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
+let w=0,h=0,start=performance.now(),frames=0,dustLast=0,cityReady=false;function frame(){const now=performance.now();frames++;if(now-start>=1000){fpsLabel.textContent='V06 | FPS: '+Math.round(frames*1000/(now-start))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri';frames=0;start=now;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();if(!cityReady){scene.userData.updateCity?.(now/1000);cityReady=true;}if(now-dustLast>=66){updateDust(now/1000);dustLast=now;}if(pendingDestination&&diagnosticActor){walkTo(pendingDestination);pendingDestination=null;}bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
 }catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
