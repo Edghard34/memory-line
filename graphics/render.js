@@ -1,3 +1,4 @@
+const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
 function sprite(context,key,x,y,width,flip=false){
  const img=images[key];if(!img?.complete||!img.naturalWidth)return;
  const height=Math.max(1,Math.round(width*img.naturalHeight/img.naturalWidth));
@@ -115,19 +116,30 @@ function render(){
  }
  for(const p of fx){g.globalAlpha=clamp(p.life/p.max,0,1);g.fillStyle=p.color;g.fillRect(Math.round(p.x),Math.round(p.y),p.max>.4?2:1,2)}
  g.globalAlpha=1;
- // Cool ambient night, with warm localized fire illumination.
- g.fillStyle='#10182c99';g.fillRect(0,0,W,H);
+ // Night shading is applied to the scene, with a genuine opening in the ambient shadow at each fire.
+ const shade=nightShade;
+ const n=shade.getContext('2d');
+ n.setTransform(1,0,0,1,0,0);n.clearRect(0,0,420,282);
+ n.globalCompositeOperation='source-over';n.fillStyle='#10182cb5';n.fillRect(0,0,420,282);
  for(const o of objects){if(o.k!=='fire0')continue;
-  const flicker=Math.sin(globalTime*8.3)*.045+Math.sin(globalTime*13.7)*.025+Math.sin(globalTime*3.1)*.04;
-  const r=102*(1+flicker),x=o.x,y=o.y-5;
+  const f=Math.sin(globalTime*8.3)*.035+Math.sin(globalTime*13.7)*.02;
+  const x=o.x-Math.round(cx),y=o.y-Math.round(cy),r=110*(1+f);
+  n.globalCompositeOperation='destination-out';
+  const hole=n.createRadialGradient(x,y,0,x,y,r);
+  hole.addColorStop(0,'rgba(0,0,0,1)');hole.addColorStop(.3,'rgba(0,0,0,.96)');hole.addColorStop(.65,'rgba(0,0,0,.55)');hole.addColorStop(1,'rgba(0,0,0,0)');
+  n.fillStyle=hole;n.fillRect(x-r,y-r,r*2,r*2);
+ }
+ n.globalCompositeOperation='source-over';
+ g.drawImage(shade,Math.round(cx),Math.round(cy));
+ for(const o of objects){if(o.k!=='fire0')continue;
+  const f=Math.sin(globalTime*8.3)*.04+Math.sin(globalTime*13.7)*.02;
   g.save();g.globalCompositeOperation='screen';
-  const glow=g.createRadialGradient(x,y,3,x,y,r);
-  glow.addColorStop(0,'rgba(255,171,83,'+(.48+flicker)+')');
-  glow.addColorStop(.25,'rgba(238,133,55,'+(.27+flicker)+')');
-  glow.addColorStop(.62,'rgba(170,83,32,.10)');
-  glow.addColorStop(1,'rgba(170,83,32,0)');
-  g.fillStyle=glow;g.fillRect(x-r,y-r,r*2,r*2);
-  g.restore();
+  const r=100*(1+f),x=o.x,y=o.y;
+  const glow=g.createRadialGradient(x,y,0,x,y,r);
+  glow.addColorStop(0,'rgba(255,174,75,'+(.58+f)+')');
+  glow.addColorStop(.35,'rgba(255,150,55,'+(.35+f)+')');
+  glow.addColorStop(.7,'rgba(215,100,30,.12)');glow.addColorStop(1,'rgba(215,100,30,0)');
+  g.fillStyle=glow;g.fillRect(x-r,y-r,r*2,r*2);g.restore();
   sprite(g,globalTime%1<.5?'fire0':'fire1',o.x,o.y,o.w);
  }
  if(flash>0){g.fillStyle='rgba(255,199,106,'+flash*.38+')';g.fillRect(0,0,W,H)}
