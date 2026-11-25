@@ -115,7 +115,21 @@ function render(){
  }
  for(const p of fx){g.globalAlpha=clamp(p.life/p.max,0,1);g.fillStyle=p.color;g.fillRect(Math.round(p.x),Math.round(p.y),p.max>.4?2:1,2)}
  g.globalAlpha=1;
- g.fillStyle='#100c1a45';g.fillRect(0,0,W,H);
+ // Cool ambient night, with warm localized fire illumination.
+ g.fillStyle='#10182c99';g.fillRect(0,0,W,H);
+ for(const o of objects){if(o.k!=='fire0')continue;
+  const flicker=Math.sin(globalTime*8.3)*.045+Math.sin(globalTime*13.7)*.025+Math.sin(globalTime*3.1)*.04;
+  const r=102*(1+flicker),x=o.x,y=o.y-5;
+  g.save();g.globalCompositeOperation='screen';
+  const glow=g.createRadialGradient(x,y,3,x,y,r);
+  glow.addColorStop(0,'rgba(255,171,83,'+(.48+flicker)+')');
+  glow.addColorStop(.25,'rgba(238,133,55,'+(.27+flicker)+')');
+  glow.addColorStop(.62,'rgba(170,83,32,.10)');
+  glow.addColorStop(1,'rgba(170,83,32,0)');
+  g.fillStyle=glow;g.fillRect(x-r,y-r,r*2,r*2);
+  g.restore();
+  sprite(g,globalTime%1<.5?'fire0':'fire1',o.x,o.y,o.w);
+ }
  if(flash>0){g.fillStyle='rgba(255,199,106,'+flash*.38+')';g.fillRect(0,0,W,H)}
  g.setTransform(1,0,0,1,0,0);const vignette=g.createRadialGradient(210,146,97,210,146,235);
  vignette.addColorStop(0,'#12091600');vignette.addColorStop(1,'#0a0612b2');g.fillStyle=vignette;g.fillRect(0,0,420,282);
