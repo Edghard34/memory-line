@@ -484,6 +484,7 @@ const rocker=part(switchRoot,.069,.095,.018,0,0,.034,plateMat);rocker.rotation.x
 const roomLight=new T.PointLight(0xffead5,0,10,2);roomLight.position.set(0,2.58,0);roomLight.castShadow=false;roomLight.shadow.mapSize.setScalar(512);roomLight.shadow.bias=-.001;roomLight.shadow.autoUpdate=false;scene.add(roomLight);
 let lampOn=false;
 function toggleLamp(){lampOn=!lampOn;rocker.rotation.x=lampOn?.13:-.13;roomLight.intensity=lampOn?22:0;if(lampOn)roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent=lampOn?'Luz acesa · Toque no interruptor para apagar':'Luz apagada · Toque no interruptor para acender';}
+const perf={anim:0,collision:0,feet:0,render:0,route:0,other:0,n:0};
 let walkTo=()=>{},pendingDestination=null;
 const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:p=>{if(p)pendingDestination=p;}});document.querySelector('#homeBtn').onclick=c.home;
 let bartenderTick=()=>{}, diagnosticActor=null;
@@ -527,7 +528,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
  const facingOffset = man.rotation.y;
  const obstacles=[[-2.24,-1.10,-1.98,.14],[-2.24,-1.43,.16,1.30],[-2.24,-1.43,1.30,1.98],[-.98,-.16,-1.98,-1.23],[-1.08,.12,1.22,1.98],[-.73,-.23,.43,.99],[.12,1.02,-.19,1.09],[1.74,2.24,.12,.98],[.78,2.24,-1.98,-.68]].map(([x0,x1,z0,z1])=>[x0-.12,x1+.12,z0-.12,z1+.12]);
  const inside=p=>obstacles.some(([x0,x1,z0,z1])=>p.x>x0&&p.x<x1&&p.z>z0&&p.z<z1);
- function blocked(a,b){for(const [x0,x1,z0,z1] of obstacles){let lo=0,hi=1;for(let k=0;k<2;k++){const axis=k?'z':'x',min=k?z0:x0,max=k?z1:x1,d=b[axis]-a[axis];if(Math.abs(d)<1e-8){if(a[axis]<=min||a[axis]>=max){hi=-1;break;}}else{const u=(min-a[axis])/d,v=(max-a[axis])/d;lo=Math.max(lo,Math.min(u,v));hi=Math.min(hi,Math.max(u,v));}}if(hi-lo>1e-6)return true;}return false;}
+ function blocked(a,b){const begin=performance.now();try{for(const [x0,x1,z0,z1] of obstacles){let lo=0,hi=1;for(let k=0;k<2;k++){const axis=k?'z':'x',min=k?z0:x0,max=k?z1:x1,d=b[axis]-a[axis];if(Math.abs(d)<1e-8){if(a[axis]<=min||a[axis]>=max){hi=-1;break;}}else{const u=(min-a[axis])/d,v=(max-a[axis])/d;lo=Math.max(lo,Math.min(u,v));hi=Math.min(hi,Math.max(u,v));}}if(hi-lo>1e-6)return true;}return false;}finally{perf.collision+=performance.now()-begin;}}
  const nav=man.position.clone();
  const shoeGeometry={"Left": [["Foot", 0.10156700015068054, -0.05499900132417679, -0.04305500164628029], ["Foot", 0.10195200145244598, -0.020457999780774117, -0.0549129992723465], ["Foot", 0.10230699926614761, 0.008967000059783459, -0.05615900084376335], ["Foot", 0.10287699848413467, 0.04948100075125694, -0.06033800169825554], ["ToeBase", -0.03466000035405159, -0.0015940000303089619, -0.0606050007045269], ["ToeBase", 0.03679399937391281, -0.0014100000262260437, -0.04430200159549713], ["ToeBase", 0.041297998279333115, -0.0005670000100508332, 0.03683599829673767], ["ToeBase", 0.07123800367116928, 0.003942000214010477, 0.026809999719262123]], "Right": [["Foot", 0.10156700015068054, -0.05499900132417679, 0.04305399954319], ["Foot", 0.101951003074646, -0.020459000021219254, 0.0549129992723465], ["Foot", 0.10230699926614761, 0.008967000059783459, 0.05615900084376335], ["Foot", 0.10287699848413467, 0.04948100075125694, 0.06033800169825554], ["ToeBase", -0.03466099873185158, -0.0015940000303089619, 0.0606050007045269], ["ToeBase", 0.036793000996112823, -0.0014100000262260437, 0.04430200159549713], ["ToeBase", 0.041297998279333115, -0.0005670000100508332, -0.03683499991893768], ["ToeBase", 0.07123800367116928, 0.003942000214010477, -0.026808999478816986]]};
  const probes=Object.entries(shoeGeometry).flatMap(([side,points])=>points.map(([joint,x,y,z])=>({
@@ -611,7 +612,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    if(blend===0 && weight<.001)weight=0;
    walking.setEffectiveWeight(weight);
    if(resting) resting.setEffectiveWeight(1-weight);
-   mixer.update(dt);
+   const animStart=performance.now();mixer.update(dt);perf.anim+=performance.now()-animStart;
    smoothLead+=(torsoLead-smoothLead)*(1-Math.exp(-8*dt));
    if(spine && Math.abs(smoothLead)>.001){
      spine.parent.getWorldQuaternion(parentRotation);
@@ -624,7 +625,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
      const parent=spine.parent.getWorldQuaternion(parentRotation);
      spine.quaternion.premultiply(inverseParent.copy(parent).invert().multiply(twist.setFromAxisAngle(forward,-bank)).multiply(parent));
    }
-   groundShoes(weight>0);
+   const feetStart=performance.now(),collisionBefore=perf.collision;groundShoes(weight>0);
    for(const {foot,toe,shadow} of footprints){
      shadow.visible=man.visible;
      shadow.position.setFromMatrixPosition(foot.matrixWorld).add(contactDelta);
@@ -632,11 +633,12 @@ let bartenderTick=()=>{}, diagnosticActor=null;
      shadow.material.opacity=T.MathUtils.clamp(1.25-shadow.position.y*4,.18,1);
      shadow.position.y=.003;shadow.rotation.z=-heading;
    }
+   perf.feet+=performance.now()-feetStart-(perf.collision-collisionBefore);
  };
  roomLight.shadow.needsUpdate=true;
  document.querySelector('#status').textContent='Toque no chão para André caminhar · Arraste para girar';
 })().catch(e=>{document.querySelector('#status').textContent='Erro ao carregar bartender: '+e.message;console.error(e)});
 
 const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';document.body.append(fpsLabel);
-let w=0,h=0,start=performance.now(),frames=0,dustLast=0,cityReady=false;function frame(){const now=performance.now();frames++;if(now-start>=1000){fpsLabel.textContent='V06 | FPS: '+Math.round(frames*1000/(now-start))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri';frames=0;start=now;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();if(!cityReady){scene.userData.updateCity?.(now/1000);cityReady=true;}if(now-dustLast>=66){updateDust(now/1000);dustLast=now;}if(pendingDestination&&diagnosticActor){walkTo(pendingDestination);pendingDestination=null;}bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
+let w=0,h=0,start=performance.now(),frames=0,dustLast=0,cityReady=false;function frame(){const now=performance.now();frames++;if(now-start>=1000){fpsLabel.textContent='V07 | FPS: '+Math.round(frames*1000/(now-start))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri';const avg=k=>(perf[k]/Math.max(1,perf.n)).toFixed(2);fpsLabel.style.whiteSpace='pre-line';fpsLabel.textContent+='\nAnim '+avg('anim')+' ms | Col '+avg('collision')+' ms\nPés '+avg('feet')+' ms | Render CPU '+avg('render')+' ms\nRota '+avg('route')+' ms | Outros '+avg('other')+' ms';for(const k in perf)perf[k]=0;frames=0;start=now;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();if(!cityReady){scene.userData.updateCity?.(now/1000);cityReady=true;}if(now-dustLast>=66){updateDust(now/1000);dustLast=now;}const workStart=performance.now(),prior=perf.anim+perf.collision+perf.feet+perf.route;if(pendingDestination&&diagnosticActor){const r0=performance.now(),c0=perf.collision;walkTo(pendingDestination);perf.route+=performance.now()-r0-(perf.collision-c0);pendingDestination=null;}bartenderTick();perf.other+=Math.max(0,performance.now()-workStart-(perf.anim+perf.collision+perf.feet+perf.route-prior));const renderStart=performance.now();renderer.render(scene,camera);perf.render+=performance.now()-renderStart;perf.n++;requestAnimationFrame(frame)}requestAnimationFrame(frame);
 }catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
