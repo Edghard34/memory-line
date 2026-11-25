@@ -1,3 +1,15 @@
+function sleepingMat(c,x,y,angle,color){
+ c.save();c.translate(x,y);c.rotate(angle);
+ c.fillStyle='#30261f';c.fillRect(-10,-17,21,35);
+ c.fillStyle='#8c7655';c.fillRect(-9,-16,18,32);
+ c.fillStyle=color;c.fillRect(-8,-9,16,23);
+ c.fillStyle='#c2ad87';c.fillRect(-7,-14,14,5);
+ c.fillStyle='#9c896a';c.fillRect(-7,-10,14,1);
+ for(let j=-7;j<14;j+=3){c.fillStyle=j%2?'#ffffff12':'#211a1626';c.fillRect(-8,j,16,1);}
+ c.fillStyle='#36291f55';c.fillRect(6,-9,2,23);
+ c.fillStyle='#b8a17a';for(let j=-8;j<9;j+=3)c.fillRect(j,15,1,3);
+ c.restore();
+}
 const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
 function sprite(context,key,x,y,width,flip=false){
  const img=images[key];if(!img?.complete||!img.naturalWidth)return;
@@ -7,7 +19,7 @@ function sprite(context,key,x,y,width,flip=false){
 }
 function trailCenter(y){const t=H-y;const u=Math.max(0,Math.min(1,(t-400)/190));return W/2+12*Math.sin(t/68)+7*Math.sin(t/37)+110*u*u*(3-2*u);}
 function dirtEdge(x,y){const t=H-y,dx=x-W/2-78,dy=y-H+421;
- const a=Math.atan2(dy/45,dx/57),r=Math.hypot(dx/57,dy/45);
+ const a=Math.atan2(dy/67,dx/80),r=Math.hypot(dx/80,dy/67);
  const camp=(1+.12*Math.sin(a*3+.8)+.09*Math.cos(a*5)+.045*Math.sin(a*11))-r;
  const road=(19+4*Math.sin(t/24)+2*Math.cos(t/9)-Math.abs(x-trailCenter(y)))/19;
  const branch=(13+3*Math.sin(x/11)-Math.abs(y-(H-421+5*Math.sin((x-W/2)/19))))/13;
@@ -17,7 +29,7 @@ function prepareFloor(zone,random){
  const c=floor.getContext('2d'),bg=c.createLinearGradient(0,34,W,H);
  bg.addColorStop(0,zone[3]);bg.addColorStop(.48,zone[2]);bg.addColorStop(1,zone[3]);
  c.fillStyle=bg;c.fillRect(0,0,W,H);
- for(let y=Math.max(0,H-630);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+160);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
+ for(let y=Math.max(0,H-630);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+185);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
  for(let i=0;i<81600;i++){
   const x=Math.floor(random()*W),y=Math.floor(random()*H);
   const road=campClear(x,y);
@@ -65,7 +77,7 @@ function danger(h){
  if(active)for(let i=0;i<6;i++){const x=h.x+(r()-.5)*h.r*1.3,y=h.y+(r()-.5)*h.r;sprite(g,biome[1]==='cuca'?'p_spit':'p_ember',x,y-Math.sin(globalTime*9+i)*2,4+i%4)}
 }
 function render(){
- g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,420,282);const cx=player?player.x-210:W/2-210,cy=player?player.y-141:H*.70-141;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0); for(const o of objects){if(o.k!=='fire0')continue;const r=115*(1+.025*Math.sin(globalTime*8)),x=o.x,y=o.y;g.save();g.globalCompositeOperation='screen';const ground=g.createRadialGradient(x,y,0,x,y,r);ground.addColorStop(0,'rgba(255,205,130,.65)');ground.addColorStop(.4,'rgba(255,185,100,.48)');ground.addColorStop(.75,'rgba(230,150,75,.18)');ground.addColorStop(1,'rgba(230,150,75,0)');g.fillStyle=ground;g.fillRect(x-r,y-r,r*2,r*2);g.restore();}
+ g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,420,282);const cx=player?player.x-210:W/2-210,cy=player?player.y-141:H*.70-141;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0);sleepingMat(g,W/2+38,H-449,-.22,'#75604a');sleepingMat(g,W/2+119,H-449,.27,'#596451'); for(const o of objects){if(o.k!=='fire0')continue;const r=115*(1+.025*Math.sin(globalTime*8)),x=o.x,y=o.y;g.save();g.globalCompositeOperation='screen';const ground=g.createRadialGradient(x,y,0,x,y,r);ground.addColorStop(0,'rgba(255,205,130,.65)');ground.addColorStop(.4,'rgba(255,185,100,.48)');ground.addColorStop(.75,'rgba(230,150,75,.18)');ground.addColorStop(1,'rgba(230,150,75,0)');g.fillStyle=ground;g.fillRect(x-r,y-r,r*2,r*2);g.restore();}
  const title=!run||mode==='menu'||mode==='hero'||mode==='forge'||mode==='codex'||mode==='confirm'||(mode==='settings'&&!player);
  for(const d of doors){
   light(d.x,d.y-7,32,'#ffc75b48');sprite(g,'door_'+biome[1]+'_o',d.x,d.y,28);
