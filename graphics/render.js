@@ -1,4 +1,18 @@
-const villageHouses=["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"].map(src=>{const im=new Image();im.src='data:image/png;base64,'+src;return im;});
+const villageHouses=[0,1,2].map(type=>{
+ const c=document.createElement('canvas');c.width=132;c.height=118;const g=c.getContext('2d');const rnd=seeded(934+type*23);const rect=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};const poly=(pts,col)=>{g.fillStyle=col;g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()};
+ g.fillStyle='#171b1570';g.beginPath();g.ellipse(67,107,59,8,0,0,Math.PI*2);g.fill();
+ rect(20,55,94,48,'#392b24');rect(23,57,88,42,'#a58a69');rect(23,57,13,42,'#79634e');for(let i=0;i<340;i++){const x=24+Math.floor(rnd()*86),y=58+Math.floor(rnd()*40);rect(x,y,1+Math.floor(rnd()*3),1,rnd()<.5?'#92765a':'#b39a77')}
+ for(let y=91;y<104;y+=5)for(let x=22-(y%2)*3;x<111;x+=9){rect(x,y,8,4,'#635952');rect(x,y,7,1,'#93847a')}
+ for(const x of [22,109]){rect(x,56,4,46,'#50392a');rect(x,56,1,46,'#96704a')}
+ const dx=type===2?37:59;rect(dx-3,70,24,33,'#3b2921');rect(dx,73,18,29,'#785034');for(let x=dx+2;x<dx+18;x+=4){rect(x,74,1,27,'#473124');rect(x+1,75,1,25,'#98704b')}rect(dx+14,88,2,2,'#d2a86a');rect(dx-5,102,28,3,'#81766a');
+ const wx=type===2?82:33;rect(wx-2,72,21,17,'#4c3527');rect(wx,74,17,12,'#242522');rect(wx+8,74,2,12,'#a57a50');rect(wx,79,17,2,'#a57a50');rect(wx-3,88,23,2,'#ad8054');
+ const straw=type===1;poly([[9,59],[22,15],[104,15],[124,59],[116,66],[15,66]],'#392820');poly([[13,58],[25,18],[102,18],[120,58],[114,62],[17,62]],straw?'#a77a3e':'#88432f');
+ if(straw){for(let y=20;y<61;y+=12){for(let x=20+Math.max(0,34-y);x<112-Math.max(0,34-y);x+=3){const n=Math.floor(rnd()*5);rect(x,y+n,2,11, ['#b78b49','#d3a35b','#8b6032','#c69953'][Math.floor(rnd()*4)]);rect(x,y+n,1,7,'#e0b36a')}}}else{for(let y=19;y<62;y+=8){const left=Math.round(25-(y-19)*.26),right=Math.round(102+(y-19)*.38);for(let x=left-(y%3)*2;x<right-3;x+=8){rect(x,y,7,7,'#67382b');rect(x+1,y,6,5,['#b05b40','#c16b4a','#a65037','#ad573c'][Math.floor(rnd()*4)]);rect(x+1,y,5,1,'#d18159');rect(x+1,y+5,5,1,'#803d2b')}}}
+ rect(25,15,78,4,straw?'#d0a35e':'#ad6045');rect(27,15,74,1,straw?'#e0b778':'#d08058');
+ if(type===0){rect(92,6,12,28,'#4d4440');for(let y=8;y<32;y+=5){rect(93,y,10,4,'#81736a');rect(93,y,9,1,'#aa9687')}rect(90,5,16,4,'#9b8b7e');rect(94,6,8,2,'#292323')}
+ for(let i=0;i<55;i++){const x=Math.floor(12+rnd()*107),y=Math.floor(100+rnd()*8);if(Math.abs(x-dx-9)<15)continue;rect(x,y,2,2,['#475536','#657347','#849052'][Math.floor(rnd()*3)])}
+ return c;
+});
 function bedrollCanvas(g,x,y,green){const a=bedrollArt[green?1:0];g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';for(let j=0;j<27;j++)for(let i=0;i<18;i++){const c=a.palette[parseInt(a.rows[j][i],16)];if(c){g.fillStyle=c;g.fillRect(Math.round(x)-9+i,Math.round(y)-27+j,1,1)}}g.restore();}
 const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
 function sprite(context,key,x,y,width,flip=false){
@@ -13,13 +27,13 @@ function dirtEdge(x,y){const t=H-y,dx=x-W/2-78,dy=y-H+421;
  const camp=(1+.12*Math.sin(a*3+.8)+.09*Math.cos(a*5)+.045*Math.sin(a*11))-r;
  const road=(19+4*Math.sin(t/24)+2*Math.cos(t/9)-Math.abs(x-trailCenter(y)))/19;
  const branch=(13+3*Math.sin(x/11)-Math.abs(y-(H-421+5*Math.sin((x-W/2)/19))))/13;
- const vx=x-W/2-420,vy=y-(H-850);const village=1-Math.hypot(vx/195,vy/155)+.08*Math.sin(x/13)*Math.cos(y/17);return Math.max(t<870?road:-2,village,x>W/2-12&&x<W/2+78?branch:-2,camp);}
+ const vx=x-W/2-420,vy=y-(H-850);const village=1-Math.hypot(vx/235,vy/190)+.08*Math.sin(x/13)*Math.cos(y/17);return Math.max(t<870?road:-2,village,x>W/2-12&&x<W/2+78?branch:-2,camp);}
 function campClear(x,y){return dirtEdge(x,y)>-.35;}
 function prepareFloor(zone,random){
  const c=floor.getContext('2d'),bg=c.createLinearGradient(0,34,W,H);
  bg.addColorStop(0,zone[3]);bg.addColorStop(.48,zone[2]);bg.addColorStop(1,zone[3]);
  c.fillStyle=bg;c.fillRect(0,0,W,H);
- for(let y=Math.max(0,H-1040);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+650);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
+ for(let y=Math.max(0,H-1080);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+690);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
  for(let i=0;i<81600;i++){
   const x=Math.floor(random()*W),y=Math.floor(random()*H);
   const road=campClear(x,y);
@@ -36,7 +50,7 @@ function prepareFloor(zone,random){
  for(let y=63;y<H;y+=16){sprite(c,'wall_'+zone[1],6,y,11);sprite(c,'wall_'+zone[1],W-6,y,11)}
  for(let i=0;i<704;i++){
   const x=20+random()*(W-40),y=52+random()*(H-69);
-  if(campClear(x,y)|| (Math.abs(x-W/2-420)<205&&Math.abs(y-(H-850))<165))continue;
+  if(campClear(x,y)|| (Math.abs(x-W/2-420)<245&&Math.abs(y-(H-850))<200))continue;
   const edge=x<55||x>W-55||y>H-42;
   if(!edge&&((x>100&&x<320)||random()>.55))continue;
   if(!edge&&Math.abs(y-113)<17)continue;
@@ -92,7 +106,7 @@ function render(){
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
 
- const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{if(o.house!==undefined){const im=villageHouses[o.house];if(im.complete&&im.naturalWidth)g.drawImage(im,Math.round(o.x-o.w/2),Math.round(o.y-o.w*43/48),o.w,Math.round(o.w*43/48));return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
+ const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{if(o.house!==undefined){const im=villageHouses[o.house];g.drawImage(im,Math.round(o.x-o.w/2),Math.round(o.y-o.w*118/132),o.w,Math.round(o.w*118/132));return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);
@@ -156,4 +170,4 @@ function render(){
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=27;
+window.brasaRenderVersion=28;

@@ -22,8 +22,6 @@ function enter(){
  prepareFloor(biome,rng);
  const vx=W/2+420,vy=H-850;
  [[-105,-25,0],[95,-38,1],[102,104,2]].forEach(([dx,dy,house])=>{objects.push({x:vx+dx,y:vy+dy,k:'village_house',house,w:132,r:0});for(let yy=-48;yy<=-8;yy+=14)for(let xx=-39;xx<=39;xx+=13)objects.push({x:vx+dx+xx,y:vy+dy+yy,k:'house_collision',w:0,r:8});});
- for(let x=-182;x<=182;x+=14){objects.push({x:vx+x,y:vy-145,k:'village_fence',w:14,r:7});if(Math.abs(vx+x-trailCenter(vy+145))>35)objects.push({x:vx+x,y:vy+145,k:'village_fence',w:14,r:7});}
- for(let y=-131;y<=131;y+=14)for(const x of [-182,182])objects.push({x:vx+x,y:vy+y,k:'village_fence',w:14,r:7,vertical:true});
  for(let i=0;i<48;i++){const x=vx+(rng()<.5?-1:1)*(151+rng()*18),y=vy-125+rng()*250;objects.push({x,y,k:choose(['d_tuft','d_moss','d_reed'],rng),w:5+rng()*7,r:0});}
 
  objects.push({x:W/2+78,y:H-421,k:'fire0',w:26,r:9});
@@ -83,4 +81,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=27;
+window.brasaMapVersion=28;
