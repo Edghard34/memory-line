@@ -89,7 +89,7 @@ function render(){
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
 
- const layers=objects.filter(o=>Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
+ const layers=objects.filter(o=>!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);
@@ -143,6 +143,7 @@ function render(){
   g.fillStyle=glow;g.fillRect(x-r,y-r,r*2,r*2);g.restore();
   sprite(g,globalTime%1<.5?'fire0':'fire1',o.x,o.y,o.w);
  }
+ for(const o of objects){if(o.k==='fire0'){sprite(g,'bedroll_a',o.x-53,o.y+10,30);sprite(g,'bedroll_b',o.x+53,o.y+10,30);}}
  if(flash>0){g.fillStyle='rgba(255,199,106,'+flash*.38+')';g.fillRect(0,0,W,H)}
  g.setTransform(1,0,0,1,0,0);const vignette=g.createRadialGradient(210,146,97,210,146,235);
  vignette.addColorStop(0,'#12091600');vignette.addColorStop(1,'#0a0612b2');g.fillStyle=vignette;g.fillRect(0,0,420,282);
