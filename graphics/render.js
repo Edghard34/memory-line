@@ -4,19 +4,19 @@ function sprite(context,key,x,y,width,flip=false){
  context.save();context.translate(Math.round(x),Math.round(y));if(flip)context.scale(-1,1);
  context.imageSmoothingEnabled=false;context.drawImage(img,-Math.round(width/2),-height,width,height);context.restore();
 }
-function trailCenter(y){const t=H-y;return W/2+12*Math.sin(t/68)+7*Math.sin(t/37);}
+function trailCenter(y){const t=H-y;const u=Math.max(0,Math.min(1,(t-400)/190));return W/2+12*Math.sin(t/68)+7*Math.sin(t/37)+110*u*u*(3-2*u);}
 function dirtEdge(x,y){const t=H-y,dx=x-W/2-78,dy=y-H+421;
  const a=Math.atan2(dy/45,dx/57),r=Math.hypot(dx/57,dy/45);
  const camp=(1+.12*Math.sin(a*3+.8)+.09*Math.cos(a*5)+.045*Math.sin(a*11))-r;
  const road=(19+4*Math.sin(t/24)+2*Math.cos(t/9)-Math.abs(x-trailCenter(y)))/19;
  const branch=(13+3*Math.sin(x/11)-Math.abs(y-(H-421+5*Math.sin((x-W/2)/19))))/13;
- return Math.max(t<490?road:-2,x>W/2-12&&x<W/2+78?branch:-2,camp);}
+ return Math.max(t<610?road:-2,x>W/2-12&&x<W/2+78?branch:-2,camp);}
 function campClear(x,y){return dirtEdge(x,y)>-.35;}
 function prepareFloor(zone,random){
  const c=floor.getContext('2d'),bg=c.createLinearGradient(0,34,W,H);
  bg.addColorStop(0,zone[3]);bg.addColorStop(.48,zone[2]);bg.addColorStop(1,zone[3]);
  c.fillStyle=bg;c.fillRect(0,0,W,H);
- for(let y=Math.max(0,H-510);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+150);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
+ for(let y=Math.max(0,H-630);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+160);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
  for(let i=0;i<81600;i++){
   const x=Math.floor(random()*W),y=Math.floor(random()*H);
   const road=campClear(x,y);
@@ -105,7 +105,7 @@ function render(){
   sprite(g,'shadow_m',actor.x,actor.y+2,15);
   g.globalAlpha=actor.inv>0&&Math.floor(globalTime*22)%2?.55:1;
   sprite(g,key+[0,1,0,2][frame],actor.x,actor.y+(frame===1?-1:0),24,actor.facing<0);g.globalAlpha=1;
-  if(key!=='luzia')sprite(g,'ember',actor.x+actor.facing*8,actor.y-6,6);
+
  }});
  layers.sort((a,b)=>a.y-b.y).forEach(layer=>layer.run());
  for(const s of shots){
@@ -115,14 +115,7 @@ function render(){
  }
  for(const p of fx){g.globalAlpha=clamp(p.life/p.max,0,1);g.fillStyle=p.color;g.fillRect(Math.round(p.x),Math.round(p.y),p.max>.4?2:1,2)}
  g.globalAlpha=1;
- if(actor){
-  const health=title?1:actor.hp/maxFlame(),r=57+health*78;
-  const vx=actor.x+actor.facing*7,vy=actor.y-10;
-  const dark=g.createRadialGradient(vx,vy,18,vx,vy,r*1.6);
-  dark.addColorStop(0,'#100b1800');dark.addColorStop(.43,'#100b180b');dark.addColorStop(1,health<.25?'#200e21c9':'#100c1a95');
-  g.fillStyle=dark;g.fillRect(0,0,W,H);
-  g.globalCompositeOperation='screen';light(vx,vy,r*.71,health<.22?'#ee612448':'#f9913f40');light(vx,vy,21,'#ffb35554');g.globalCompositeOperation='source-over';
- }
+ g.fillStyle='#100c1a45';g.fillRect(0,0,W,H);
  if(flash>0){g.fillStyle='rgba(255,199,106,'+flash*.38+')';g.fillRect(0,0,W,H)}
  g.setTransform(1,0,0,1,0,0);const vignette=g.createRadialGradient(210,146,97,210,146,235);
  vignette.addColorStop(0,'#12091600');vignette.addColorStop(1,'#0a0612b2');g.fillStyle=vignette;g.fillRect(0,0,420,282);
