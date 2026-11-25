@@ -24,13 +24,13 @@ function tick(dt){
  player.walk=Math.hypot(x,y)>.1||player.dash>0?player.walk+dt*9:0;
  if(fight){
   const drain=(sinceHit>7?2.2:sinceHit>3?1.36:.75)*(1-clamp(stat('drain'),-.65,.73));
-  heal(-dt*drain);
+  // Exploration: flame is depleted only by damage.
   while(spawnQueue.length&&spawnQueue[0].at<=roomTime){
    const item=spawnQueue.shift(),side=Math.floor(rng()*3),px=side===0?28:side===1?W-28:70+rng()*(W-140),py=side===2?72:76+rng()*110;
    spawn(item.id,px,py,false,item.elite);dust(px,py,'#ba82a6',13,57);
   }
   if(player.fireCD<=0&&enemies.length&&(input.mouse||input.fire||k.has(' ')||profile.assist))attack();
-  for(const e of enemies.slice())if(e.hp>0)drive(e,dt);
+  for(const e of enemies.slice())if(e.hp>0&&distance(e,player)<170)drive(e,dt);
   for(const h of hazards){
    if(h.delay>0)h.delay-=dt;else{h.life-=dt;if(distance(h,player)<h.r)harm(h.damage)}
   }
@@ -54,7 +54,7 @@ function tick(dt){
   }
   drops=drops.filter(d=>!d.done);
   if(player.hp<=0){finish(false);return}
-  if(!enemies.length&&!spawnQueue.length)clearFight();
+  // No wave completion in exploration mode.
  }else if(doorLock<=0){
   const door=doors.find(o=>distance(o,player)<16);
   if(door)nextRoom(door);
