@@ -1,32 +1,32 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>BRASA</title>
-<link rel="stylesheet" href="styles/game.css?v=37">
-<style>.npc-dialogue:has(.npc-choices button:nth-child(3)){display:flex;align-items:center;gap:12px;max-width:90vw}.npc-dialogue:has(.npc-choices button:nth-child(3)) .npc-choices{display:flex;flex-direction:column;gap:5px;min-width:180px}</style><style>.sheet.inventory-sheet{width:min(720px,94vw);max-height:92vh;padding:12px;background:#211c17;border:2px solid #9b7950;color:#e9d6b4}.inv-layout{display:grid;grid-template-columns:1fr 1.35fr;gap:12px}.inv-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;align-items:center}.inv-equip img{width:100%;max-height:80px;object-fit:contain;image-rendering:pixelated}.inv-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.inv-slot{min-width:0;aspect-ratio:1;padding:2px!important;background:#332b23!important;border:1px solid #756044!important;color:#e9d6b4;font-size:11px;position:relative}.inv-slot img{width:65%;height:65%;object-fit:contain;image-rendering:pixelated}.inv-slot.selected{border:2px solid #e6b76b!important}.inv-slot small{position:absolute;bottom:1px;right:3px}.inv-info{min-height:40px;font-size:12px;margin-top:6px}.inv-footer{display:flex;justify-content:space-between;gap:6px}.inv-footer button{padding:6px 12px}</style><style>#inventory{position:fixed;left:max(12px,env(safe-area-inset-left));top:max(52px,calc(env(safe-area-inset-top) + 40px));width:42px;height:42px;padding:5px;background:#29221bd9;border:1px solid #a58960;border-radius:5px;z-index:9}#inventory img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style></head><body><main id="app">
+<link rel="stylesheet" href="styles/game.css?v=38">
+<style>.npc-dialogue:has(.npc-choices button:nth-child(3)){display:flex;align-items:center;gap:12px;max-width:90vw}.npc-dialogue:has(.npc-choices button:nth-child(3)) .npc-choices{display:flex;flex-direction:column;gap:5px;min-width:180px}</style><style>.sheet.inventory-sheet{width:min(720px,94vw);max-height:92vh;padding:12px;background:#211c17;border:2px solid #9b7950;color:#e9d6b4}.inv-layout{display:grid;grid-template-columns:1fr 1.35fr;gap:12px}.inv-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;align-items:center}.inv-equip img{width:100%;max-height:80px;object-fit:contain;image-rendering:pixelated}.inv-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.inv-slot{min-width:0;aspect-ratio:1;padding:2px!important;background:#332b23!important;border:1px solid #756044!important;color:#e9d6b4;font-size:11px;position:relative}.inv-slot img{width:65%;height:65%;object-fit:contain;image-rendering:pixelated}.inv-slot.selected{border:2px solid #e6b76b!important}.inv-slot small{position:absolute;bottom:1px;right:3px}.inv-info{min-height:40px;font-size:12px;margin-top:6px}.inv-footer{display:flex;justify-content:space-between;gap:6px}.inv-footer button{padding:6px 12px}</style><style>#inventory{position:fixed;left:max(12px,env(safe-area-inset-left));top:max(52px,calc(env(safe-area-inset-top) + 40px));width:42px;height:42px;padding:5px;background:#29221bd9;border:1px solid #a58960;border-radius:5px;z-index:9}#inventory img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}</style><style>#inventory{pointer-events:auto;touch-action:manipulation}#inventory img{pointer-events:none}#panel:has(.inventory-sheet){overflow:hidden;padding:4px max(12px,env(safe-area-inset-right)) 4px max(12px,env(safe-area-inset-left));align-items:center;touch-action:none}.sheet.inventory-sheet{width:min(760px,100%);height:auto;max-height:100%;padding:7px 12px;overflow:hidden;--slot:min(8.7vh,48px)}.inventory-sheet h2{font-size:clamp(16px,5vh,24px);line-height:1.1;margin:0 0 5px}.inventory-sheet h3{font-size:13px;margin:0 0 4px}.inv-layout{grid-template-columns:1fr 1.35fr;gap:10px;align-items:start}.inv-grid{grid-template-columns:repeat(6,var(--slot));justify-content:center;gap:3px}.inv-equip{grid-template-columns:repeat(3,var(--slot));justify-content:center;gap:3px}.inv-slot{width:var(--slot);height:var(--slot);aspect-ratio:auto;font-size:9px;line-height:1}.inv-equip img{height:var(--slot);max-height:var(--slot)}.inv-info{min-height:26px;font-size:11px;line-height:1.15;margin-top:4px}.inv-footer{align-items:center;font-size:11px;margin-top:4px}.inv-footer button{padding:4px 12px;font-size:12px}</style></head><body><main id="app">
 <canvas id="scene" aria-label="Arena de BRASA"></canvas>
 <div id="hud" hidden><div><div class="meter" role="meter" aria-label="Chama" aria-valuemin="0" aria-valuemax="100"><div id="flame"></div></div><div id="stats"></div></div><button id="inventory" onclick="openInventory()" aria-label="Mochila"><img alt="" id="bag-icon"> </button><div id="place"></div><button class="pause" id="pause" aria-label="Pausar">Ⅱ</button></div>
 <div id="announce" role="status"></div>
 <div id="touch" hidden><div id="pad" aria-label="Joystick"><div id="nub"></div></div><div class="actions"><button id="dash">Esquiva</button><button id="skill">Dom</button><button class="main" id="fire">Atacar</button></div></div>
 <div id="panel"></div>
 <div id="rotate" role="status"><strong>BRASA</strong><span>Gire o celular para jogar na horizontal.</span></div>
-<button id="talk" hidden style="position:absolute;left:50%;bottom:18%;transform:translateX(-50%);z-index:8;padding:12px 20px;background:#34251c;color:#ffe4aa;border:1px solid #b58a52;border-radius:8px">Conversar</button><div id="build-version" style="position:fixed;top:5px;right:8px;z-index:99999;color:#fff;background:#181510b8;padding:3px 6px;font:11px monospace;pointer-events:none">v37 · carregando</div><div id="sleep-fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:100000"></div></main>
-<script src="assets/registry.js?v=37"></script>
-<script src="assets/environment/bedrolls.js?v=37"></script>
-<script src="assets/heroes/sprites.js?v=37"></script>
-<script src="assets/enemies/sprites.js?v=37"></script>
-<script src="assets/projectiles/sprites.js?v=37"></script>
-<script src="assets/bosses/sprites.js?v=37"></script>
-<script src="assets/environment/sprites.js?v=37"></script>
-<script src="assets/items/sprites.js?v=37"></script>
-<script src="assets/icons/sprites.js?v=37"></script>
-<script src="data/catalog.js?v=37"></script>
-<script src="core/state.js?v=37"></script>
-<script src="audio/sound.js?v=37"></script>
-<script src="ui/menus.js?v=37"></script>
-<script src="mechanics/progression.js?v=37"></script>
-<script src="mechanics/combat.js?v=37"></script>
-<script src="mechanics/enemies.js?v=37"></script>
-<script src="mechanics/update.js?v=37"></script>
-<script src="graphics/render.js?v=37"></script>
-<script src="ui/controls.js?v=37"></script>
-<script src="core/main.js?v=37"></script>
-<script>document.getElementById("bag-icon").src=ART.i_bolsa;document.getElementById("build-version").textContent="v37 · R"+(window.brasaRenderVersion||"?")+" · M"+(window.brasaMapVersion||"?");</script></body></html>
+<button id="talk" hidden style="position:absolute;left:50%;bottom:18%;transform:translateX(-50%);z-index:8;padding:12px 20px;background:#34251c;color:#ffe4aa;border:1px solid #b58a52;border-radius:8px">Conversar</button><div id="build-version" style="position:fixed;top:5px;right:8px;z-index:99999;color:#fff;background:#181510b8;padding:3px 6px;font:11px monospace;pointer-events:none">v38 · carregando</div><div id="sleep-fade" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:100000"></div></main>
+<script src="assets/registry.js?v=38"></script>
+<script src="assets/environment/bedrolls.js?v=38"></script>
+<script src="assets/heroes/sprites.js?v=38"></script>
+<script src="assets/enemies/sprites.js?v=38"></script>
+<script src="assets/projectiles/sprites.js?v=38"></script>
+<script src="assets/bosses/sprites.js?v=38"></script>
+<script src="assets/environment/sprites.js?v=38"></script>
+<script src="assets/items/sprites.js?v=38"></script>
+<script src="assets/icons/sprites.js?v=38"></script>
+<script src="data/catalog.js?v=38"></script>
+<script src="core/state.js?v=38"></script>
+<script src="audio/sound.js?v=38"></script>
+<script src="ui/menus.js?v=38"></script>
+<script src="mechanics/progression.js?v=38"></script>
+<script src="mechanics/combat.js?v=38"></script>
+<script src="mechanics/enemies.js?v=38"></script>
+<script src="mechanics/update.js?v=38"></script>
+<script src="graphics/render.js?v=38"></script>
+<script src="ui/controls.js?v=38"></script>
+<script src="core/main.js?v=38"></script>
+<script>document.getElementById("bag-icon").src=ART.i_bolsa;document.getElementById("build-version").textContent="v38 · R"+(window.brasaRenderVersion||"?")+" · M"+(window.brasaMapVersion||"?");</script></body></html>
