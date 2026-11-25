@@ -372,7 +372,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    bone:bone(side+joint),local:new T.Vector3(x,y,z),previous:new T.Vector3(),current:new T.Vector3()
  })));
  let previousContact=false;
- const contactDelta=new T.Vector3();
+ const contactDelta=new T.Vector3(), offsetScratch=new T.Vector3(), nextScratch=new T.Vector3(), navScratch=new T.Vector3();
  function groundShoes(lockHorizontal){
    man.updateMatrixWorld(true);
    let lowest=probes[0];
@@ -384,10 +384,10 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    if(previousContact && lockHorizontal){
      contactDelta.copy(lowest.previous).sub(lowest.current);
      contactDelta.y=0;
-     const offset=man.position.clone().add(contactDelta).sub(nav);
+     const offset=offsetScratch.copy(man.position).add(contactDelta).sub(nav);
      offset.y=0;
      offset.clampLength(0,.16);
-     const next=nav.clone().add(offset);
+     const next=nextScratch.copy(nav).add(offset);
      if(!blocked(nav,next) && Math.abs(next.x)<=2.02 && next.z>=-1.72 && next.z<=1.78)
        contactDelta.copy(next).sub(man.position);
      else contactDelta.copy(nav).sub(man.position);
@@ -415,7 +415,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    }
  };
  const spine=bone('Spine2');
- const up=new T.Vector3(0,1,0), twist=new T.Quaternion(), parentRotation=new T.Quaternion();
+ const up=new T.Vector3(0,1,0), twist=new T.Quaternion(), parentRotation=new T.Quaternion(), inverseParent=new T.Quaternion(), forwardScratch=new T.Vector3(), toeScratch=new T.Vector3();
  const soft=document.createElement('canvas');soft.width=soft.height=64;
  const brush=soft.getContext('2d'),gradient=brush.createRadialGradient(32,32,0,32,32,32);
  gradient.addColorStop(0,'rgba(0,0,0,.48)');gradient.addColorStop(1,'rgba(0,0,0,0)');
@@ -426,7 +426,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    shadow.rotation.x=-Math.PI/2;scene.add(shadow);
    return {foot:bone(side+'Foot'),toe:bone(side+'ToeBase'),shadow};
  });
- let bank=0;
+ let bank=0, smoothLead=0;
  let last=performance.now();
  bartenderTick=()=>{
    const now=performance.now(), dt=Math.min(.12,(now-last)/1000); last=now;
@@ -444,7 +444,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
      torsoLead=T.MathUtils.clamp(turn*.22,-.28,.28);
      man.rotation.y=facingOffset+heading;
      step=Math.min(len,speed*dt,(curvature>.15?Math.max(.06,len*2.5):1.2)*dt)*(1-.85*curvature);
-     const next=nav.clone();
+     const next=navScratch.copy(nav);
      next.x+=Math.sin(heading)*step; next.z+=Math.cos(heading)*step;
      if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(nav,next)) {step=0;walkTo(route[route.length-1]);}
      else { man.position.x+=next.x-nav.x; man.position.z+=next.z-nav.z; nav.copy(next); }
@@ -461,21 +461,23 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    walking.setEffectiveWeight(weight);
    if(resting) resting.setEffectiveWeight(1-weight);
    mixer.update(dt);
-   if(spine && Math.abs(torsoLead)>.001){
+   smoothLead+=(torsoLead-smoothLead)*(1-Math.exp(-8*dt));
+   if(spine && Math.abs(smoothLead)>.001){
      spine.parent.getWorldQuaternion(parentRotation);
-     twist.setFromAxisAngle(up,torsoLead*weight);
-     spine.quaternion.premultiply(parentRotation.clone().invert().multiply(twist).multiply(parentRotation));
+     twist.setFromAxisAngle(up,smoothLead*weight);
+     spine.quaternion.premultiply(inverseParent.copy(parentRotation).invert().multiply(twist).multiply(parentRotation));
    }
-   bank+=(T.MathUtils.clamp(torsoLead*.55,-.15,.15)-bank)*(1-Math.exp(-7*dt));
+   bank+=(T.MathUtils.clamp(smoothLead*.55,-.15,.15)-bank)*(1-Math.exp(-7*dt));
    if(spine && Math.abs(bank)>.001){
-     const forward=new T.Vector3(Math.sin(heading),0,Math.cos(heading));
-     const parent=spine.parent.getWorldQuaternion(new T.Quaternion());
-     spine.quaternion.premultiply(parent.clone().invert().multiply(new T.Quaternion().setFromAxisAngle(forward,-bank)).multiply(parent));
+     const forward=forwardScratch.set(Math.sin(heading),0,Math.cos(heading));
+     const parent=spine.parent.getWorldQuaternion(parentRotation);
+     spine.quaternion.premultiply(inverseParent.copy(parent).invert().multiply(twist.setFromAxisAngle(forward,-bank)).multiply(parent));
    }
    groundShoes(weight>0);
    for(const {foot,toe,shadow} of footprints){
-     foot.getWorldPosition(shadow.position);
-     if(toe)shadow.position.lerp(toe.getWorldPosition(up.clone()),.55);
+     shadow.visible=man.visible;
+     shadow.position.setFromMatrixPosition(foot.matrixWorld).add(contactDelta);
+     if(toe)shadow.position.lerp(toeScratch.setFromMatrixPosition(toe.matrixWorld).add(contactDelta),.55);
      shadow.material.opacity=T.MathUtils.clamp(1.25-shadow.position.y*4,.18,1);
      shadow.position.y=.003;shadow.rotation.z=-heading;
    }
@@ -486,7 +488,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
 
 const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';fpsLabel.textContent='FPS: medindo';document.body.append(fpsLabel);
 let fpsStart=performance.now(),fpsFrames=0,dustLast=0;
-const perf=document.createElement('select');perf.style.cssText='position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 30px);z-index:9999;font-size:12px';for(const [v,t] of [['normal','Normal'],['freeze','André congelado'],['hide','Sem André'],['city','Cidade estática'],['blank','Teste sem render']]){const o=document.createElement('option');o.value=v;o.textContent=t;perf.append(o);}document.body.append(perf);perf.onchange=()=>{if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';fpsStart=performance.now();fpsFrames=0;};
-let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(perf.value!=='city'&&perf.value!=='blank')scene.userData.updateCity?.(stamp/1000);citySum+=performance.now()-cityStart;if(stamp-dustLast>=33){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='city')bartenderTick();const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
+const perf=document.createElement('select');perf.style.cssText='position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 30px);z-index:9999;font-size:12px';for(const [v,t] of [['normal','Normal'],['freeze','André congelado'],['hide','Sem André'],['animated','Cidade animada'],['blank','Teste sem render']]){const o=document.createElement('option');o.value=v;o.textContent=t;perf.append(o);}document.body.append(perf);perf.onchange=()=>{if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';fpsStart=performance.now();fpsFrames=0;};
+let cityInitialized=false;let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(!cityInitialized||perf.value==='animated'){scene.userData.updateCity?.(stamp/1000);cityInitialized=true;}citySum+=performance.now()-cityStart;if(stamp-dustLast>=33){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='animated')bartenderTick();const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
 }catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
 
