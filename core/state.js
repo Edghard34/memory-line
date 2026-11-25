@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const canvas=$('scene'), ctx=canvas.getContext('2d',{alpha:false}), W=420,H=282, TAU=Math.PI*2;
-const world=document.createElement('canvas');world.width=W;world.height=H;
+const canvas=$('scene'), ctx=canvas.getContext('2d',{alpha:false}), W=1680,H=1128, TAU=Math.PI*2;
+const world=document.createElement('canvas');world.width=420;world.height=282;
 const g=world.getContext('2d');
 const floor=document.createElement('canvas');floor.width=W;floor.height=H;
 const images=Object.fromEntries(Object.entries(ART).map(([key,url])=>{const img=new Image();img.src=url;return [key,img]}));
