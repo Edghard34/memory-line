@@ -8,20 +8,20 @@ function prepareFloor(zone,random){
  const c=floor.getContext('2d'),bg=c.createLinearGradient(0,34,W,H);
  bg.addColorStop(0,zone[3]);bg.addColorStop(.48,zone[2]);bg.addColorStop(1,zone[3]);
  c.fillStyle=bg;c.fillRect(0,0,W,H);
- for(let i=0;i<5100;i++){
+ for(let i=0;i<81600;i++){
   const x=Math.floor(random()*W),y=Math.floor(random()*H);
   const road=Math.abs(x-W/2-Math.sin(y/48)*62)<30;
   c.fillStyle=road?(i%2?'#e9ae7920':'#04040920'):(i%2?zone[4]+'2d':'#08070b48');
   c.fillRect(x,y,1+Math.floor(random()*5),1+(i%5===0?1:0));
  }
- for(let i=0;i<180;i++){
+ for(let i=0;i<2880;i++){
   const x=12+random()*(W-24),y=40+random()*(H-52);
   c.globalAlpha=.41+random()*.51;sprite(c,choose(zone[6],random),x,y,3+Math.floor(random()*7),random()<.5);
  }
  c.globalAlpha=1;
  for(let x=6;x<W+8;x+=15){sprite(c,'wall_'+zone[1],x,44,16);sprite(c,'wall_'+zone[1],x,H+7,16)}
  for(let y=63;y<H;y+=16){sprite(c,'wall_'+zone[1],6,y,11);sprite(c,'wall_'+zone[1],W-6,y,11)}
- for(let i=0;i<44;i++){
+ for(let i=0;i<704;i++){
   const x=20+random()*(W-40),y=52+random()*(H-69);
   const edge=x<55||x>W-55||y>H-42;
   if(!edge&&((x>100&&x<320)||random()>.55))continue;
@@ -53,7 +53,7 @@ function danger(h){
  if(active)for(let i=0;i<6;i++){const x=h.x+(r()-.5)*h.r*1.3,y=h.y+(r()-.5)*h.r;sprite(g,biome[1]==='cuca'?'p_spit':'p_ember',x,y-Math.sin(globalTime*9+i)*2,4+i%4)}
 }
 function render(){
- g.imageSmoothingEnabled=false;g.drawImage(floor,0,0);
+ g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,420,282);const cx=player?player.x-210:W/2-210,cy=player?player.y-141:H*.70-141;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0);
  const title=!run||mode==='menu'||mode==='hero'||mode==='forge'||mode==='codex'||mode==='confirm'||(mode==='settings'&&!player);
  for(const d of doors){
   light(d.x,d.y-7,32,'#ffc75b48');sprite(g,'door_'+biome[1]+'_o',d.x,d.y,28);
@@ -76,7 +76,7 @@ function render(){
   if(k==='ember')light(drop.x,drop.y,16,'#ff8a3c57');
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
- const layers=objects.map(o=>({y:o.y,run:()=>{sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w)}}));
+ const layers=objects.filter(o=>Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);
@@ -113,11 +113,11 @@ function render(){
   g.globalCompositeOperation='screen';light(vx,vy,r*.71,health<.22?'#ee612448':'#f9913f40');light(vx,vy,21,'#ffb35554');g.globalCompositeOperation='source-over';
  }
  if(flash>0){g.fillStyle='rgba(255,199,106,'+flash*.38+')';g.fillRect(0,0,W,H)}
- const vignette=g.createRadialGradient(W/2,H*.52,W*.23,W/2,H*.52,W*.56);
- vignette.addColorStop(0,'#12091600');vignette.addColorStop(1,'#0a0612b2');g.fillStyle=vignette;g.fillRect(0,0,W,H);
- const vw=canvas.width,vh=canvas.height,fit=Math.min(vw/W,vh/H),sw=Math.floor(W*fit),sh=Math.floor(H*fit);
+ g.setTransform(1,0,0,1,0,0);const vignette=g.createRadialGradient(210,146,97,210,146,235);
+ vignette.addColorStop(0,'#12091600');vignette.addColorStop(1,'#0a0612b2');g.fillStyle=vignette;g.fillRect(0,0,420,282);
+ const vw=canvas.width,vh=canvas.height,fit=Math.min(vw/420,vh/282),sw=Math.floor(420*fit),sh=Math.floor(282*fit);
  const sx=Math.floor((vw-sw)/2),sy=Math.floor((vh-sh)/2)-(vh>vw?Math.floor(vh*.054):0);
  view={x:sx,y:sy,w:sw,h:sh};ctx.fillStyle='#110e14';ctx.fillRect(0,0,vw,vh);ctx.imageSmoothingEnabled=false;
- const jitter=profile.shake?shake*12:0;
+ const jitter=0;
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
