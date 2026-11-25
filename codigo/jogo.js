@@ -57,26 +57,32 @@ function update(dt) {
 function draw() {
   ctx.setTransform(canvas.width/view,0,0,canvas.height/450,0,0);
   const bg=imgs.get('cenario/horizonte');
+  ctx.filter='grayscale(1) brightness(.65) contrast(.85)';
   for(let i=-1;i<=Math.ceil(view/1176)+1;i++) {
     ctx.save();ctx.translate(i*1176-(camera*.22%1176)+(i%2?1176:0),0);
     ctx.scale(i%2?-1:1,1);ctx.drawImage(bg,0,0,1177,floor);ctx.restore();
   }
+  ctx.filter='none';
   // Atmospheric perspective between distant landscape and street.
   const haze=ctx.createLinearGradient(0,80,0,floor);
-  haze.addColorStop(0,'rgba(137,125,145,.02)');haze.addColorStop(1,'rgba(188,160,137,.23)');
+  haze.addColorStop(0,'rgba(130,130,130,.02)');haze.addColorStop(1,'rgba(160,160,160,.23)');
   ctx.fillStyle=haze;ctx.fillRect(0,0,view,floor);
   for(const [index,b] of street.fachadas.entries()) {
     const layer=buildings[index], structure=imgs.get(layer.id);
     const scale=b.altura/structure.height;
-    ctx.save();ctx.globalAlpha=.24;ctx.fillStyle='#201c29';ctx.fillRect(b.x-camera+5,floor-b.altura+7,structure.width*scale,b.altura);ctx.restore();
+    ctx.save();ctx.globalAlpha=.24;ctx.fillStyle='#202020';ctx.fillRect(b.x-camera+5,floor-b.altura+7,structure.width*scale,b.altura);ctx.restore();
+    ctx.filter='brightness(0)';
     sprite(layer.id,b.x,floor,b.altura);
     for(const p of layer.partes) {
       const im=imgs.get(p.id);
+      ctx.filter='grayscale(1) brightness(.28) contrast(.85)';
       ctx.drawImage(im,b.x-camera+p.x*scale,floor-b.altura+p.y*scale,im.width*scale,im.height*scale);
     }
   }
+  ctx.filter='grayscale(1) brightness(.48)';
   for(let i=Math.floor(camera/200);i<=(camera+view)/200;i++)
     ctx.drawImage(imgs.get('cenario/rua'),i*200-camera,floor,201,58);
+  ctx.filter='brightness(0)';
   for(let i=-1;i<5;i++)ctx.drawImage(imgs.get('objetos/fiacao'),500+i*625-camera,40,626,52);
   for(const [name,left,base,height] of street.objetos){
     const im=imgs.get('objetos/'+name),w=im.width*height/im.height;
@@ -84,20 +90,23 @@ function draw() {
     sprite('objetos/'+name,left,base,height);
   }
   ctx.fillStyle='rgba(25,20,30,.38)';ctx.beginPath();ctx.ellipse(x-camera+2,397,13,3,0,0,Math.PI*2);ctx.fill();
+  ctx.filter='none';
   if(marker>0) {
     ctx.strokeStyle='rgba(255,226,168,'+Math.min(.85,marker*2)+')';
     ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(target-camera,397,8,2.4,0,0,Math.PI*2);ctx.stroke();
   }
   const id=Math.abs(velocity)>2?framePath(facing,running?'correr':'andar',Math.floor(phase*6)%6):'personagem/'+facing+'/parado';
+  ctx.filter='grayscale(1) brightness(.32) contrast(1.25)';
   ctx.drawImage(imgs.get(id),x-camera-55,397-350*110/362,110,110);
+  ctx.filter='none';
   // Restrained dusk grading and moving airborne particles.
   const grade=ctx.createLinearGradient(0,0,0,450);
-  grade.addColorStop(0,'rgba(45,43,77,.19)');grade.addColorStop(.65,'rgba(115,69,48,.07)');grade.addColorStop(1,'rgba(28,24,42,.25)');
+  grade.addColorStop(0,'rgba(40,40,40,.19)');grade.addColorStop(.65,'rgba(85,85,85,.07)');grade.addColorStop(1,'rgba(25,25,25,.25)');
   ctx.fillStyle=grade;ctx.fillRect(0,0,view,450);
-  for(const p of dust){const px=((p.x+elapsed*7)%2070)-camera;if(px<0||px>view)continue;ctx.globalAlpha=.15+.12*Math.sin(elapsed*.7+p.x);ctx.fillStyle='#f8d9aa';ctx.fillRect(px,p.y+Math.sin(elapsed*.5+p.x)*5,p.r,p.r);}
+  for(const p of dust){const px=((p.x+elapsed*7)%2070)-camera;if(px<0||px>view)continue;ctx.globalAlpha=.15+.12*Math.sin(elapsed*.7+p.x);ctx.fillStyle='#bdbdbd';ctx.fillRect(px,p.y+Math.sin(elapsed*.5+p.x)*5,p.r,p.r);}
   ctx.globalAlpha=1;
   const vignette=ctx.createRadialGradient(view*.5,225,Math.min(view,450)*.28,view*.5,225,Math.hypot(view/2,225));
-  vignette.addColorStop(0,'rgba(18,15,29,0)');vignette.addColorStop(1,'rgba(18,15,29,.48)');ctx.fillStyle=vignette;ctx.fillRect(0,0,view,450);
+  vignette.addColorStop(0,'rgba(15,15,15,0)');vignette.addColorStop(1,'rgba(15,15,15,.48)');ctx.fillStyle=vignette;ctx.fillRect(0,0,view,450);
 }
 function loop(time) {
   const dt=Math.min((time-(lastTime??time))/1000,.04);
