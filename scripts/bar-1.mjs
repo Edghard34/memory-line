@@ -383,38 +383,7 @@ let bartenderTick=()=>{};
    shadow.rotation.x=-Math.PI/2;scene.add(shadow);
    return {foot:bone(side+'Foot'),toe:bone(side+'ToeBase'),shadow};
  });
- const legs=['Left','Right'].map(side=>({
-   thigh:bone(side+'UpLeg'),shin:bone(side+'Leg'),foot:bone(side+'Foot'),
-   anchor:new T.Vector3(),rotation:new T.Quaternion(),held:false,strength:0
- }));
- const vec=()=>new T.Vector3();
- function swingBone(b,from,to){
-   const parent=b.parent.getWorldQuaternion(new T.Quaternion());
-   const swing=new T.Quaternion().setFromUnitVectors(from.normalize(),to.normalize());
-   b.quaternion.premultiply(parent.clone().invert().multiply(swing).multiply(parent));
-   b.updateWorldMatrix(false,true);
- }
- function plant(leg,hold,dt){
-   const a=leg.thigh.getWorldPosition(vec()),b=leg.shin.getWorldPosition(vec()),c=leg.foot.getWorldPosition(vec());
-   const current=leg.foot.getWorldQuaternion(new T.Quaternion());
-   if(hold&&!leg.held){leg.anchor.copy(c);leg.rotation.copy(current);}
-   leg.held=hold;
-   leg.strength=hold?1:Math.max(0,leg.strength-dt*9);
-   if(!leg.strength)return;
-   const target=c.clone().lerp(leg.anchor,leg.strength);
-   const axis=target.clone().sub(a),l=a.distanceTo(b),m=b.distanceTo(c);
-   const reach=T.MathUtils.clamp(axis.length(),Math.abs(l-m)+.0001,l+m-.0001);
-   axis.normalize();
-   const pole=b.clone().sub(a);pole.addScaledVector(axis,-pole.dot(axis));
-   if(pole.lengthSq()<1e-9)return;
-   const along=(l*l-m*m+reach*reach)/(2*reach);
-   const hinge=a.clone().addScaledVector(axis,along).addScaledVector(pole.normalize(),Math.sqrt(Math.max(0,l*l-along*along)));
-   swingBone(leg.thigh,b.clone().sub(a),hinge.sub(a));
-   const knee=leg.shin.getWorldPosition(vec());
-   swingBone(leg.shin,leg.foot.getWorldPosition(vec()).sub(knee),target.sub(knee));
-   leg.foot.quaternion.copy(leg.shin.getWorldQuaternion(new T.Quaternion()).invert().multiply(current.slerp(leg.rotation,leg.strength)));
- }
- let stance=0,bank=0;
+ let bank=0;
  let last=performance.now();
  bartenderTick=()=>{
    const now=performance.now(), dt=Math.min(.05,(now-last)/1000); last=now;
@@ -459,10 +428,6 @@ let bartenderTick=()=>{};
      const parent=spine.parent.getWorldQuaternion(new T.Quaternion());
      spine.quaternion.premultiply(parent.clone().invert().multiply(new T.Quaternion().setFromAxisAngle(forward,-bank)).multiply(parent));
    }
-   const heights=legs.map(l=>l.foot.getWorldPosition(vec()).y);
-   if(heights[1-stance]+.014<heights[stance])stance=1-stance;
-   const settled=!route.length && weight<.03;
-   legs.forEach((leg,index)=>plant(leg,index===stance || (settled && Math.abs(heights[0]-heights[1])<.035),dt));
    for(const {foot,toe,shadow} of footprints){
      foot.getWorldPosition(shadow.position);
      if(toe)shadow.position.lerp(toe.getWorldPosition(up.clone()),.55);
