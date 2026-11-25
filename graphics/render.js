@@ -1,4 +1,4 @@
-const bedrollRows=["................","...ssssssss.....","..spppppppps....","..spqqqqqqps....","..spppppppps....","..sbbbbbbbbbs...","..sbcccccccbs...","..sbccdccdcbs...","..sbcccccccbs...","..sbccccdccbs...","..sbdccccccbs...","..sbcccccccbs...","..sbccdccdcbs...","..sbcccccccbs...","..sbcccccccbs...","..sbbbbbbbbbs...","...t.t.t.t.t....","................"];function bedrollCanvas(g,x,y,green){const colors={...{"s":"#412f24","p":"#bea57a","q":"#e0c99b","t":"#a6875b"},...(green?{b:'#42523e',c:'#70855c',d:'#929f6f'}:{b:'#784c2d',c:'#ad7747',d:'#c7925b'})};g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';for(let j=0;j<bedrollRows.length;j++)for(let i=0;i<16;i++){const k=bedrollRows[j][i];if(colors[k]){g.fillStyle=colors[k];g.fillRect(Math.round(x)-12+Math.floor(i*1.5),Math.round(y)-27+Math.floor(j*1.5),Math.floor((i+1)*1.5)-Math.floor(i*1.5),Math.floor((j+1)*1.5)-Math.floor(j*1.5))}}g.restore();}
+function bedrollCanvas(g,x,y,green){const a=bedrollArt[green?1:0];g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';for(let j=0;j<27;j++)for(let i=0;i<18;i++){const c=a.palette[parseInt(a.rows[j][i],16)];if(c){g.fillStyle=c;g.fillRect(Math.round(x)-9+i,Math.round(y)-27+j,1,1)}}g.restore();}
 const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
 function sprite(context,key,x,y,width,flip=false){
  const img=images[key];if(!img?.complete||!img.naturalWidth)return;
@@ -154,4 +154,4 @@ function render(){
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=19;
+window.brasaRenderVersion=20;
