@@ -261,6 +261,46 @@ const doorTex=new T.TextureLoader().load('../assets/textures/apartamento-2-1.jpg
     const shadowTex=canvasTexture(128,128,(c,w,h)=>{const g=c.createRadialGradient(64,64,12,64,64,64);g.addColorStop(0,'rgba(0,0,0,.40)');g.addColorStop(.55,'rgba(0,0,0,.24)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,w,h);});
     const shadowMat=new T.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
     for(const [x,z,w,d] of [[-1.65,-.91,1.2,2.15],[-1.84,.76,.8,1.4],[-1.83,1.62,.8,.8],[.60,.45,.95,1.4],[-.48,1.60,1.3,.9],[-.57,-1.60,.9,.8],[1.99,.55,.6,.85]]){const o=new T.Mesh(new T.PlaneGeometry(w,d),shadowMat);o.rotation.x=-Math.PI/2;o.position.set(x,.009,z);group.add(o);}
+
+    // Bake static opaque furniture into indexed batches, retaining exact vertices,
+    // normals, UVs, materials and shadow flags. Transparent decals stay separate.
+    const furnitureBatches=new Map();
+    for(const o of group.children){
+      if(!o.isMesh || o.material.transparent || Array.isArray(o.material) || !o.geometry.index)continue;
+      const a=o.geometry.attributes;
+      if(Object.keys(a).sort().join(',')!=='normal,position,uv')continue;
+      const key=o.material.uuid+':'+o.castShadow+':'+o.receiveShadow;
+      if(!furnitureBatches.has(key))furnitureBatches.set(key,[]);
+      furnitureBatches.get(key).push(o);
+    }
+    for(const list of furnitureBatches.values()){
+      if(list.length<2)continue;
+      let nv=0,ni=0;
+      for(const o of list){nv+=o.geometry.attributes.position.count;ni+=o.geometry.index.count;}
+      const p=new Float32Array(nv*3),n=new Float32Array(nv*3),u=new Float32Array(nv*2);
+      const idx=nv>65535?new Uint32Array(ni):new Uint16Array(ni);
+      const v=new T.Vector3(),normal=new T.Matrix3();let vo=0,io=0;
+      for(const o of list){
+        o.updateMatrix();normal.getNormalMatrix(o.matrix);
+        const a=o.geometry.attributes;
+        for(let j=0;j<a.position.count;j++){
+          v.fromBufferAttribute(a.position,j).applyMatrix4(o.matrix).toArray(p,(vo+j)*3);
+          v.fromBufferAttribute(a.normal,j).applyMatrix3(normal).normalize().toArray(n,(vo+j)*3);
+          u[(vo+j)*2]=a.uv.getX(j);u[(vo+j)*2+1]=a.uv.getY(j);
+        }
+        for(let j=0;j<o.geometry.index.count;j++)idx[io++]=vo+o.geometry.index.getX(j);
+        vo+=a.position.count;
+      }
+      const g=new T.BufferGeometry();
+      g.setAttribute('position',new T.BufferAttribute(p,3));
+      g.setAttribute('normal',new T.BufferAttribute(n,3));
+      g.setAttribute('uv',new T.BufferAttribute(u,2));
+      g.setIndex(new T.BufferAttribute(idx,1));g.computeBoundingSphere();
+      const merged=new T.Mesh(g,list[0].material);
+      merged.castShadow=list[0].castShadow;merged.receiveShadow=list[0].receiveShadow;
+      for(const o of list){group.remove(o);o.geometry.dispose();}
+      group.add(merged);
+    }
   }
   for(const [key,b] of batches){const g=new T.BufferGeometry();for(const [name,list,size] of [['position',b.p,3],['normal',b.n,3],['color',b.c,3],['uv',b.u,2]])g.setAttribute(name,new T.Float32BufferAttribute(list,size));g.setIndex(b.i);g.computeBoundingSphere();const mesh=new T.Mesh(g,mats.get(key));mesh.castShadow=!['view','lace','fire'].includes(key);mesh.receiveShadow=true;scene.add(mesh);}
 }
