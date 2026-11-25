@@ -326,7 +326,7 @@ let bartenderTick=()=>{};
  // Face the customer side (+Z), using the model's eye positions to determine forward.
  const le=bone('LeftEye'),re=bone('RightEye');
  if(le&&re&&head){const eye=le.getWorldPosition(new T.Vector3()).add(re.getWorldPosition(new T.Vector3())).multiplyScalar(.5).sub(head.getWorldPosition(new T.Vector3()));if(Math.abs(eye.z)+Math.abs(eye.x)>.01)man.rotation.y=-Math.atan2(eye.x,eye.z);}
- const motion = await fetch('../assets/animations/andre-walk.json?v=1').then(response => {
+ const motion = await fetch('../assets/animations/andre-walk.json?v=2').then(response => {
    if (!response.ok) throw Error('Falha ao carregar a caminhada');
    return response.json();
  });
@@ -359,7 +359,7 @@ let bartenderTick=()=>{};
    if (!p || Math.abs(p.x)>2.25 || Math.abs(p.z)>2) return;
    const goal=new T.Vector3(T.MathUtils.clamp(p.x,-2.02,2.02),0,T.MathUtils.clamp(p.z,-1.72,1.78));
    if (inside(goal)) return;
-   const nodes=[man.position.clone(),goal,new T.Vector3(edge+.01,0,back-.01),new T.Vector3(edge+.01,0,front+.01)];
+   const nodes=[man.position.clone(),goal,new T.Vector3(edge+.16,0,back-.14),new T.Vector3(edge+.16,0,front+.14)];
    const options=[[1],[2,1],[3,1],[2,3,1],[3,2,1]];
    let shortest=Infinity;
    for (const option of options) {
@@ -371,31 +371,62 @@ let bartenderTick=()=>{};
      if (length<shortest) { shortest=length; route=option.map(i=>nodes[i]); }
    }
  };
+ const spine=bone('Spine2');
+ const up=new T.Vector3(0,1,0), twist=new T.Quaternion(), parentRotation=new T.Quaternion();
+ const soft=document.createElement('canvas');soft.width=soft.height=64;
+ const brush=soft.getContext('2d'),gradient=brush.createRadialGradient(32,32,0,32,32,32);
+ gradient.addColorStop(0,'rgba(0,0,0,.48)');gradient.addColorStop(1,'rgba(0,0,0,0)');
+ brush.fillStyle=gradient;brush.fillRect(0,0,64,64);
+ const shadowMap=new T.CanvasTexture(soft);
+ const footprints=['Left','Right'].map(side=>{
+   const shadow=new T.Mesh(new T.PlaneGeometry(.28,.38),new T.MeshBasicMaterial({map:shadowMap,transparent:true,depthWrite:false}));
+   shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+   return {foot:bone(side+'Foot'),toe:bone(side+'ToeBase'),shadow};
+ });
  let last=performance.now();
  bartenderTick=()=>{
    const now=performance.now(), dt=Math.min(.05,(now-last)/1000); last=now;
-   let step=0;
+   let step=0,turnStep=0,torsoLead=0;
    if (route.length) {
      const goal=route[0],dx=goal.x-man.position.x,dz=goal.z-man.position.z,len=Math.hypot(dx,dz);
      const desired=Math.atan2(dx,dz);
      const turn=Math.atan2(Math.sin(desired-heading),Math.cos(desired-heading));
-     const limit=3.4*dt;
-     heading+=T.MathUtils.clamp(turn,-limit,limit);
-     man.rotation.y=facingOffset+heading;
-     const aligned=Math.max(0,1-Math.abs(turn)/.85);
-     const cruise=Math.min(1.12,Math.sqrt(4.4*len))*aligned;
+     const curvature=Math.min(1,Math.abs(turn)/1.5);
+     const cruise=Math.min(1.12-.72*curvature,Math.sqrt(4.4*len));
      speed+=T.MathUtils.clamp(cruise-speed,-3.2*dt,2.2*dt);
-     step=Math.min(len,speed*dt*aligned);
-     if(len>.00001) { man.position.x+=dx/len*step; man.position.z+=dz/len*step; }
-     if(len-step<.002) route.shift();
+     const yaw=T.MathUtils.clamp(turn,-3.8*dt,3.8*dt);
+     heading+=yaw;
+     turnStep=Math.abs(yaw)*.13;
+     torsoLead=T.MathUtils.clamp(turn*.22,-.28,.28);
+     man.rotation.y=facingOffset+heading;
+     step=Math.min(len,speed*dt,Math.max(.01,len*2.1)*dt)*(1-.85*curvature);
+     const next=man.position.clone();
+     next.x+=Math.sin(heading)*step; next.z+=Math.cos(heading)*step;
+     if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(man.position,next)) {step=0;walkTo(route[route.length-1]);}
+     else man.position.copy(next);
+     if(Math.hypot(goal.x-man.position.x,goal.z-man.position.z)<.012) route.shift();
    } else speed=0;
-   distance+=step;
-   walking.time=(distance%motion.stride)/motion.stride*motion.duration;
-   const blend=T.MathUtils.clamp(step/Math.max(dt,.00001)/.38,0,1);
+   distance+=Math.hypot(step,turnStep);
+   const phase=(distance%motion.stride)/motion.stride;
+   const upper=motion.travel.findIndex(value=>value>phase);
+   const i=upper<1?motion.travel.length-2:upper-1;
+   walking.time=T.MathUtils.lerp(motion.times[i],motion.times[i+1],(phase-motion.travel[i])/(motion.travel[i+1]-motion.travel[i]));
+   const blend=T.MathUtils.clamp(Math.hypot(step,turnStep)/Math.max(dt,.00001)/.38,0,1);
    weight+=(blend-weight)*(1-Math.exp(-14*dt));
    walking.setEffectiveWeight(weight);
    if(resting) resting.setEffectiveWeight(1-weight);
    mixer.update(dt);
+   if(spine && Math.abs(torsoLead)>.001){
+     spine.parent.getWorldQuaternion(parentRotation);
+     twist.setFromAxisAngle(up,torsoLead*weight);
+     spine.quaternion.premultiply(parentRotation.clone().invert().multiply(twist).multiply(parentRotation));
+   }
+   for(const {foot,toe,shadow} of footprints){
+     foot.getWorldPosition(shadow.position);
+     if(toe)shadow.position.lerp(toe.getWorldPosition(up.clone()),.55);
+     shadow.material.opacity=T.MathUtils.clamp(1.25-shadow.position.y*4,.18,1);
+     shadow.position.y=.003;shadow.rotation.z=-heading;
+   }
  };
  roomLight.shadow.needsUpdate=true;
  document.querySelector('#status').textContent='Toque no chão para André caminhar · Arraste para girar';
