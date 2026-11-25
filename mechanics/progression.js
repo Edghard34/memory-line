@@ -21,17 +21,17 @@ function enter(){
  roomTime=0;stageClock=0;sinceHit=0;doorLock=.7;shake=0;flash=0;cleared=false;fight=run.kind==='combat'||run.kind==='elite'||run.room===4;
  prepareFloor(biome,rng);
  const vx=W/2+420,vy=H-850;
- [[-57,-8,0],[55,-24,1],[57,59,2]].forEach(([dx,dy,house])=>objects.push({x:vx+dx,y:vy+dy,k:'village_house',house,w:78,r:28}));
- for(let x=-112;x<=112;x+=14){objects.push({x:vx+x,y:vy-87,k:'village_fence',w:14,r:7});if(Math.abs(x)>24)objects.push({x:vx+x,y:vy+87,k:'village_fence',w:14,r:7});}
- for(let y=-73;y<=73;y+=14)for(const x of [-112,112])objects.push({x:vx+x,y:vy+y,k:'village_fence',w:14,r:7,vertical:true});
- for(let i=0;i<34;i++){const x=vx+(rng()<.5?-1:1)*(82+rng()*18),y=vy-70+rng()*140;objects.push({x,y,k:choose(['d_tuft','d_flower','d_moss','d_reed','rock_m'],rng),w:5+rng()*7,r:0});}
+ [[-105,-25,0],[95,-38,1],[102,104,2]].forEach(([dx,dy,house])=>{objects.push({x:vx+dx,y:vy+dy,k:'village_house',house,w:132,r:0});for(let yy=-48;yy<=-8;yy+=14)for(let xx=-39;xx<=39;xx+=13)objects.push({x:vx+dx+xx,y:vy+dy+yy,k:'house_collision',w:0,r:8});});
+ for(let x=-182;x<=182;x+=14){objects.push({x:vx+x,y:vy-145,k:'village_fence',w:14,r:7});if(Math.abs(vx+x-trailCenter(vy+145))>35)objects.push({x:vx+x,y:vy+145,k:'village_fence',w:14,r:7});}
+ for(let y=-131;y<=131;y+=14)for(const x of [-182,182])objects.push({x:vx+x,y:vy+y,k:'village_fence',w:14,r:7,vertical:true});
+ for(let i=0;i<48;i++){const x=vx+(rng()<.5?-1:1)*(151+rng()*18),y=vy-125+rng()*250;objects.push({x,y,k:choose(['d_tuft','d_moss','d_reed'],rng),w:5+rng()*7,r:0});}
 
  objects.push({x:W/2+78,y:H-421,k:'fire0',w:26,r:9});
  objects.push({x:W/2+122,y:H-435,k:'bedroll_a',w:24,r:0},{x:W/2+149,y:H-410,k:'bedroll_b',w:24,r:0});
  HEROES.filter((_,i)=>i!==run.id).forEach((a,i)=>objects.push({x:W/2+78+(i?25:-25),y:H-405,k:a[1]+'0',w:24,r:7,npc:a[0]}));
  fight=true;run.zone=0;run.room=0;run.kind='combat';
  const pool=POOLS[0];
- for(let i=0;i<24;i++){const x=60+rng()*(W-120),y=65+rng()*(H-130);if(y<H-550&&Math.hypot(x-player.x,y-player.y)>160&&!objects.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+12))spawn(choose(pool,rng),x,y);}
+ for(let i=0;i<24;i++){const x=60+rng()*(W-120),y=65+rng()*(H-130);if(!(Math.abs(x-vx)<200&&Math.abs(y-vy)<160)&&y<H-550&&Math.hypot(x-player.x,y-player.y)>160&&!objects.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+12))spawn(choose(pool,rng),x,y);}
 
  keep();resumePlay();
  label('Mata do Avesso · Exploração livre',2.1);
@@ -83,4 +83,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=26;
+window.brasaMapVersion=27;
