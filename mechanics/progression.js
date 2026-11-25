@@ -14,24 +14,18 @@ function rewardAsh(n){
  run.earned+=n;
 }
 function enter(){
- hero=HEROES[run.id];biome=BIOMES[run.zone];
+ hero=HEROES[run.id];biome=BIOMES[0];
  rng=seeded(run.seed^Math.imul(run.zone*13+run.room+1,943177));
  player={x:W/2,y:H-57,hp:run.hp,r:7,facing:1,dx:1,dy:0,walk:0,inv:0,dash:0,dashCD:0,skillCD:0,fireCD:0,guard:!!stat('guard'),count:0};
  enemies=[];shots=[];drops=[];objects=[];hazards=[];fx=[];doors=[];spawnQueue=[];
  roomTime=0;stageClock=0;sinceHit=0;doorLock=.7;shake=0;flash=0;cleared=false;fight=run.kind==='combat'||run.kind==='elite'||run.room===4;
  prepareFloor(biome,rng);
- if(fight){
-  if(run.room===4)spawn(biome[7],W/2,83,true);
-  else{
-   const pool=POOLS[run.zone], count=4+run.zone+run.room+(run.kind==='elite'?2:0);
-   for(let i=0;i<count;i++)spawnQueue.push({id:choose(pool,rng),at:i<4?.35+i*.06:1.9+(i-4)*.64});
-   if(run.kind==='elite')spawnQueue[0].elite=true;
-  }
- }else{
-  objects.push({x:W/2,y:113,k:({rest:'fire0',shop:'vendor',altar:'altar',pact:'caldeirao'})[run.kind],w:36,r:0});
- }
+ fight=true;run.zone=0;run.room=0;run.kind='combat';
+ const pool=POOLS[0];
+ for(let i=0;i<24;i++){const x=60+rng()*(W-120),y=65+rng()*(H-130);if(Math.hypot(x-player.x,y-player.y)>160&&!objects.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+12))spawn(choose(pool,rng),x,y);}
+
  keep();resumePlay();
- label(run.room===0?biome[0]:run.room===4?biome[8]:({combat:'A noite se mexe',elite:'Uma presença mais forte',rest:'Fogueira',shop:'Feira à meia-noite',altar:'Altar dos patronos',pact:'Caldeirão da Cuca'})[run.kind],2.1);
+ label('Caatinga · Exploração livre',2.1);
  if(!fight){mode='wait';setRoomDoors();service()}
 }
 function service(){
