@@ -1,3 +1,5 @@
+const houseMasks=[[[.08,.25],[.24,.10],[.72,.10],[.79,.06],[.84,.13],[.84,.32],[.91,.40],[.91,.64],[.77,.76],[.22,.76],[.12,.64]],[[.10,.35],[.31,.18],[.85,.18],[.91,.53],[.85,.76],[.24,.76],[.13,.64]],[[.08,.36],[.33,.15],[.86,.15],[.92,.54],[.85,.76],[.20,.76],[.10,.65]]];
+function drawVillageHouse(g,o,foreground){const im=villageHouses[o.house];if(!im.complete||!im.naturalWidth)return;const w=o.w,ht=Math.round(w*im.naturalHeight/im.naturalWidth),x=Math.round(o.x-w/2),y=Math.round(o.y-ht);g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(foreground){g.beginPath();houseMasks[o.house].forEach(([a,b],i)=>i?g.lineTo(x+a*w,y+b*ht):g.moveTo(x+a*w,y+b*ht));g.closePath();g.clip();}g.drawImage(im,x,y,w,ht);g.restore();}
 const villageHouses=[1,2,3].map(i=>{const im=new Image();im.src='assets/environment/casa_'+i+'.png?v=29';return im;});
 function bedrollCanvas(g,x,y,green){const a=bedrollArt[green?1:0];g.save();g.globalAlpha=1;g.globalCompositeOperation='source-over';for(let j=0;j<27;j++)for(let i=0;i<18;i++){const c=a.palette[parseInt(a.rows[j][i],16)];if(c){g.fillStyle=c;g.fillRect(Math.round(x)-9+i,Math.round(y)-27+j,1,1)}}g.restore();}
 const nightShade=document.createElement('canvas');nightShade.width=420;nightShade.height=282;
@@ -68,7 +70,7 @@ function danger(h){
  if(active)for(let i=0;i<6;i++){const x=h.x+(r()-.5)*h.r*1.3,y=h.y+(r()-.5)*h.r;sprite(g,biome[1]==='cuca'?'p_spit':'p_ember',x,y-Math.sin(globalTime*9+i)*2,4+i%4)}
 }
 function render(){
- g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,420,282);const cx=player?player.x-210:W/2-210,cy=player?player.y-141:H*.70-141;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0);for(const o of objects){if(o.k==='bedroll_a'||o.k==='bedroll_b')bedrollCanvas(g,o.x,o.y+13,o.k==='bedroll_b');} for(const o of objects){if(o.k!=='fire0')continue;const r=115*(1+.025*Math.sin(globalTime*8)),x=o.x,y=o.y;g.save();g.globalCompositeOperation='screen';const ground=g.createRadialGradient(x,y,0,x,y,r);ground.addColorStop(0,'rgba(255,205,130,.26)');ground.addColorStop(.4,'rgba(255,185,100,.18)');ground.addColorStop(.75,'rgba(230,150,75,.07)');ground.addColorStop(1,'rgba(230,150,75,0)');g.fillStyle=ground;g.fillRect(x-r,y-r,r*2,r*2);g.restore();}
+ g.imageSmoothingEnabled=false;g.setTransform(1,0,0,1,0,0);g.fillStyle=biome[3];g.fillRect(0,0,420,282);const cx=player?player.x-210:W/2-210,cy=player?player.y-141:H*.70-141;g.translate(-Math.round(cx),-Math.round(cy));g.drawImage(floor,0,0);for(const o of objects)if(o.house!==undefined)drawVillageHouse(g,o,false);for(const o of objects){if(o.k==='bedroll_a'||o.k==='bedroll_b')bedrollCanvas(g,o.x,o.y+13,o.k==='bedroll_b');} for(const o of objects){if(o.k!=='fire0')continue;const r=115*(1+.025*Math.sin(globalTime*8)),x=o.x,y=o.y;g.save();g.globalCompositeOperation='screen';const ground=g.createRadialGradient(x,y,0,x,y,r);ground.addColorStop(0,'rgba(255,205,130,.26)');ground.addColorStop(.4,'rgba(255,185,100,.18)');ground.addColorStop(.75,'rgba(230,150,75,.07)');ground.addColorStop(1,'rgba(230,150,75,0)');g.fillStyle=ground;g.fillRect(x-r,y-r,r*2,r*2);g.restore();}
  const title=!run||mode==='menu'||mode==='hero'||mode==='forge'||mode==='codex'||mode==='confirm'||(mode==='settings'&&!player);
  for(const d of doors){
   light(d.x,d.y-7,32,'#ffc75b48');sprite(g,'door_'+biome[1]+'_o',d.x,d.y,28);
@@ -92,7 +94,7 @@ function render(){
   sprite(g,k,drop.x,drop.y-2+Math.sin(globalTime*6+drop.x)*2,9);
  }
 
- const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.y,run:()=>{if(o.house!==undefined){const im=villageHouses[o.house];if(im.complete&&im.naturalWidth){const ht=Math.round(o.w*im.naturalHeight/im.naturalWidth);g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(im,Math.round(o.x-o.w/2),Math.round(o.y-ht),o.w,ht);g.restore();};return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
+ const layers=objects.filter(o=>o.k!=='house_collision'&&!o.k.startsWith('bedroll_')&&Math.abs(o.x-cx-210)<260&&Math.abs(o.y-cy-141)<190).map(o=>({y:o.house!==undefined?o.y-o.w*.24:o.y,run:()=>{if(o.house!==undefined){drawVillageHouse(g,o,true);return;}if(o.k==='village_fence'){villageFence(g,o);return;}if(o.k==='fire0')light(o.x,o.y-10,65,'#ff9a405c');sprite(g,'shadow_m',o.x,o.y+2,o.w*.66);sprite(g,o.k==='fire0'&&globalTime%1<.5?'fire1':o.k,o.x,o.y,o.w);if(o.npc)littleText(o.npc,o.x,o.y-30)}}));
  for(const e of enemies)layers.push({y:e.y,run:()=>{
   const width=e.boss?(e.id==='b_mula'?50:43):e.elite?32:e.id==='mapinguari'?33:e.id==='cupinho'?15:23;
   sprite(g,'shadow_m',e.x,e.y+2,width*.64);
@@ -156,4 +158,4 @@ function render(){
  ctx.drawImage(world,sx+Math.round(Math.sin(globalTime*153)*jitter),sy+Math.round(Math.cos(globalTime*170)*jitter),sw,sh);
 }
 
-window.brasaRenderVersion=29;
+window.brasaRenderVersion=30;
