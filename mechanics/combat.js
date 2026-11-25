@@ -21,17 +21,18 @@ function steer(entity,x,y,pass=false){
  entity.x=clamp(entity.x,16,W-16);entity.y=clamp(entity.y,45,H-23);
 }
 function attack(){
+ if(run.id!==2||shots.some(s=>s.team==='you'))return;
  player.count++;
  const target=enemies.reduce((a,b)=>b.hp>0&&(!a||distance(player,b)<distance(player,a))?b:a,null);
  let a=Math.atan2(player.dy,player.dx);
  if(input.mouse&&input.aim)a=Math.atan2(input.aim.y-player.y,input.aim.x-player.x);
  else if(target)a=between(player,target);
  player.facing=Math.cos(a)>=0?1:-1;
- const id=['p_bolt','p_ember','p_pellet'][run.id],n=run.id===2?4:1;
+ const id=['p_bolt','p_ember','p_pellet'][run.id],n=1;
  const damage= Math.max(1,hero[5]+stat('damage')/(run.id===2?2:1));
  const data={id,damage,speed:(run.id===1?169:235)*(1+stat('bullet')),life:run.id===2?.47:1.65,pierce:stat('pierce')};
  for(let i=0;i<n;i++){const angle=a+(i-(n-1)/2)*.14;shoot(player.x+Math.cos(angle)*4,player.y-6,angle,'you',data)}
- if(stat('echo')&&player.count%4===0)shoot(player.x,player.y-4,a+.24,'you',data);
+ 
  player.fireCD=hero[4]/Math.max(.3,1+stat('rate'));
  dust(player.x+Math.cos(a)*9,player.y-5,'#ffb35b',4,22);
  tone(run.id===2?100:235,run.id===2?44:142,.10,.023,run.id===2?'sawtooth':'triangle');
@@ -41,23 +42,7 @@ function useDash(){
  if(stat('dashBlast'))for(const e of enemies)if(distance(player,e)<50)hurt(e,stat('dashBlast'));
  tone(230,70,.18,.04);
 }
-function skill(){
- player.skillCD=8*(1-stat('cool'));flash=.32;shake=.17;
- if(run.id===0){
-  for(let i=0;i<14;i++)shoot(player.x,player.y-4,i*TAU/14,'you',{damage:37+stat('power'),speed:185,id:'p_bolt',pierce:4,life:1.2});
- }else if(run.id===1){
-  player.dash=.40;player.inv=.55;
-  for(const e of enemies)if(distance(e,player)<91)hurt(e,58+stat('power'));
-  for(let i=0;i<12;i++)shoot(player.x,player.y-4,i*TAU/12,'you',{damage:23+stat('power')*.5,speed:120,id:'p_ember',pierce:1,life:.65});
- }else{
-  const target=enemies.filter(e=>e.hp>0).sort((a,b)=>distance(player,a)-distance(player,b))[0];
-  const a=target?between(player,target):Math.atan2(player.dy,player.dx);
-  for(let i=-5;i<=5;i++)shoot(player.x,player.y-4,a+i*.101,'you',{damage:28+stat('power')*.45,speed:250,id:'p_pellet',pierce:1,life:.76});
- }
- if(stat('drowse'))for(const e of enemies)if(distance(e,player)<140)e.slow=3;
- dust(player.x,player.y-9,'#ffe394',28,105);tone(140,650,.4,.07);
- label(hero[6],.8);
-}
+function skill(){if(run.id!==2)return;if(player.fireCD<=0)attack();}
 function harm(n){
  if(player.inv>0||player.dash>0||!fight)return;
  if(player.guard||rng()<stat('evade')){player.guard=false;player.inv=.3;label('Protegido',.55);return}

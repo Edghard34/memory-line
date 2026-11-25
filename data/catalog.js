@@ -1,7 +1,7 @@
 const HEROES = [
- ['Luzia','luzia',100,91,.46,20,'Facho','Um clarão que atravessa a roda de inimigos.'],
- ['Zambi','zambi',120,83,.65,32,'Ginga','Avança invulnerável e espalha fogo ao redor.'],
- ['Tião','tiao',87,101,.77,13,'Chuva de chumbo','Uma rajada em leque para abrir passagem.']
+ ['Luzia','luzia',100,91,.46,20,'Sem ataque à distância','Exploração.'],
+ ['Zambi','zambi',120,83,.65,32,'Sem ataque à distância','Exploração.'],
+ ['Tião','tiao',87,101,.77,13,'Disparo','Uma chama por vez.']
 ];
 const BIOMES = [
  ['Mata do Avesso','mata','#182820','#0b1714','#6a9c66',['tree_a','tree_b','stump','mush_b','rock_m'],['d_tuft','d_flower','d_moss','d_reed'],'b_curupira','Curupira'],
