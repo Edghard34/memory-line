@@ -13,7 +13,7 @@ function hud(){
  $('flame').parentElement.setAttribute('aria-valuemax',max);
  $('flame').parentElement.setAttribute('aria-valuenow',value);
  $('stats').textContent='Chama '+value+'/'+max+' · '+run.coins+' moedas';
- $('place').innerHTML=biome[0]+'<br>Sala '+(run.room+1)+'/5 · '+(ready?hero[6]+' pronto':Math.ceil(player.skillCD)+'s para o dom');
+ $('place').innerHTML=biome[0]+'<br>Exploração · '+(ready?hero[6]+' pronto':Math.ceil(player.skillCD)+'s para o dom');
  $('dash').innerHTML=imgTag('i_dash')+(dash?'Esquiva':player.dashCD.toFixed(1)+'s');$('skill').innerHTML=imgTag('i_skill1')+(ready?'Dom':Math.ceil(player.skillCD)+'s');
 }
 function clearInput(){input.keys.clear();input.cx=input.cy=0;input.fire=input.mouse=input.dash=input.skill=false;$('nub').style.transform='';pointer=null;firePointer=null}
@@ -33,7 +33,7 @@ for(const key of ['skill','dash']){
  $(key).onclick=e=>{if(e.detail===0&&mode==='play')input[key]=true};
 }
 $('fire').innerHTML=imgTag('i_flame')+'Atacar';
-function aim(e){const b=canvas.getBoundingClientRect();input.aim={x:((e.clientX-b.left)*canvas.width/b.width-view.x)*W/view.w,y:((e.clientY-b.top)*canvas.height/b.height-view.y)*H/view.h}}
+function aim(e){const b=canvas.getBoundingClientRect();input.aim={x:((e.clientX-b.left)*canvas.width/b.width-view.x)*420/view.w+player.x-210,y:((e.clientY-b.top)*canvas.height/b.height-view.y)*282/view.h+player.y-141}}
 canvas.onpointerdown=e=>{if(mode==='play'&&e.pointerType==='mouse'){canvas.setPointerCapture(e.pointerId);input.mouse=true;aim(e)}};
 canvas.onpointermove=e=>{if(e.pointerType==='mouse')aim(e)};
 canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=()=>input.mouse=false;
