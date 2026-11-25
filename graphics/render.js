@@ -4,12 +4,19 @@ function sprite(context,key,x,y,width,flip=false){
  context.save();context.translate(Math.round(x),Math.round(y));if(flip)context.scale(-1,1);
  context.imageSmoothingEnabled=false;context.drawImage(img,-Math.round(width/2),-height,width,height);context.restore();
 }
-function campClear(x,y){return Math.abs(x-W/2)<30&&y>H-490||Math.hypot(x-W/2-78,y-H+421)<65|| (Math.abs(y-H+421)<18&&x>W/2&&x<W/2+78)}
+function trailCenter(y){const t=H-y;return W/2+12*Math.sin(t/68)+7*Math.sin(t/37);}
+function dirtEdge(x,y){const t=H-y,dx=x-W/2-78,dy=y-H+421;
+ const a=Math.atan2(dy/45,dx/57),r=Math.hypot(dx/57,dy/45);
+ const camp=(1+.12*Math.sin(a*3+.8)+.09*Math.cos(a*5)+.045*Math.sin(a*11))-r;
+ const road=(19+4*Math.sin(t/24)+2*Math.cos(t/9)-Math.abs(x-trailCenter(y)))/19;
+ const branch=(13+3*Math.sin(x/11)-Math.abs(y-(H-421+5*Math.sin((x-W/2)/19))))/13;
+ return Math.max(t<490?road:-2,x>W/2-12&&x<W/2+78?branch:-2,camp);}
+function campClear(x,y){return dirtEdge(x,y)>-.35;}
 function prepareFloor(zone,random){
  const c=floor.getContext('2d'),bg=c.createLinearGradient(0,34,W,H);
  bg.addColorStop(0,zone[3]);bg.addColorStop(.48,zone[2]);bg.addColorStop(1,zone[3]);
  c.fillStyle=bg;c.fillRect(0,0,W,H);
- c.fillStyle='#70513a';c.fillRect(W/2-19,H-490,38,490);c.fillRect(W/2,H-435,78,28);c.beginPath();c.ellipse(W/2+78,H-421,57,45,0,0,TAU);c.fill();
+ for(let y=Math.max(0,H-510);y<H;y+=2){for(let x=Math.max(0,Math.floor(W/2-45));x<Math.min(W,W/2+150);x+=2){const e=dirtEdge(x,y);const noise=(Math.sin(x*12.9898+y*78.233)*43758.5453)%1; if(e+noise*.14>0){c.fillStyle=e<.18?'#594734':e<.4?'#654a35':noise>.55?'#79583e':'#70513a';c.fillRect(x,y,2,2);}}}
  for(let i=0;i<81600;i++){
   const x=Math.floor(random()*W),y=Math.floor(random()*H);
   const road=campClear(x,y);
@@ -18,7 +25,7 @@ function prepareFloor(zone,random){
  }
  for(let i=0;i<2880;i++){
   const x=12+random()*(W-24),y=40+random()*(H-52);
-  if(campClear(x,y))continue;
+  if(dirtEdge(x,y)>.22|| (campClear(x,y)&&random()<.8))continue;
   c.globalAlpha=.41+random()*.51;sprite(c,choose(zone[6],random),x,y,3+Math.floor(random()*7),random()<.5);
  }
  c.globalAlpha=1;
