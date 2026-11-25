@@ -355,7 +355,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
  const inside = p => p.x < edge && p.z > back && p.z < front;
  function blocked(a,b) {
    let lo = 0, hi = 1;
-   for (const [axis,min,max] of [['x',-3,edge],['z',back,front]]) {
+   for(let axisIndex=0;axisIndex<2;axisIndex++){const axis=axisIndex===0?'x':'z',min=axisIndex===0?-3:back,max=axisIndex===0?edge:front;
      const delta = b[axis]-a[axis];
      if (Math.abs(delta)<1e-8) {
        if (a[axis]<=min || a[axis]>=max) return false;
@@ -426,7 +426,7 @@ let bartenderTick=()=>{}, diagnosticActor=null;
    shadow.rotation.x=-Math.PI/2;scene.add(shadow);
    return {foot:bone(side+'Foot'),toe:bone(side+'ToeBase'),shadow};
  });
- let bank=0, smoothLead=0;
+ let bank=0, smoothLead=0, yawRate=0;
  let last=performance.now();
  bartenderTick=()=>{
    const now=performance.now(), dt=Math.min(.12,(now-last)/1000); last=now;
@@ -438,7 +438,9 @@ let bartenderTick=()=>{}, diagnosticActor=null;
      const curvature=Math.min(1,Math.abs(turn)/1.5);
      const cruise=Math.min(1.12-.72*curvature,Math.sqrt(4.4*len));
      speed+=T.MathUtils.clamp(cruise-speed,-3.2*dt,2.2*dt);
-     const yaw=T.MathUtils.clamp(turn,-2.8*dt,2.8*dt);
+     const targetYawRate=T.MathUtils.clamp(turn*5,-2.8,2.8);
+     yawRate+=(targetYawRate-yawRate)*(1-Math.exp(-12*dt));
+     const yaw=Math.sign(yawRate)===Math.sign(turn)?Math.sign(turn)*Math.min(Math.abs(turn),Math.abs(yawRate)*dt):0;
      heading+=yaw;
      turnStep=Math.abs(yaw)*.29;
      torsoLead=T.MathUtils.clamp(turn*.22,-.28,.28);
@@ -449,10 +451,10 @@ let bartenderTick=()=>{}, diagnosticActor=null;
      if (Math.abs(next.x)>2.02 || next.z< -1.72 || next.z>1.78 || blocked(nav,next)) {step=0;walkTo(route[route.length-1]);}
      else { man.position.x+=next.x-nav.x; man.position.z+=next.z-nav.z; nav.copy(next); }
      if(Math.hypot(goal.x-nav.x,goal.z-nav.z)<.012) route.shift();
-   } else speed=0;
+   } else {speed=0;yawRate=0;}
    distance+=Math.hypot(step,turnStep);
    const phase=(distance%motion.stride)/motion.stride;
-   const upper=motion.travel.findIndex(value=>value>phase);
+   let low=0,high=motion.travel.length;while(low<high){const mid=(low+high)>>>1;if(motion.travel[mid]>phase)high=mid;else low=mid+1;}const upper=low===motion.travel.length?-1:low;
    const i=upper<1?motion.travel.length-2:upper-1;
    walking.time=T.MathUtils.lerp(motion.times[i],motion.times[i+1],(phase-motion.travel[i])/(motion.travel[i+1]-motion.travel[i]));
    const blend=T.MathUtils.clamp(Math.hypot(step,turnStep)/Math.max(dt,.00001)/.38,0,1);
@@ -489,6 +491,6 @@ let bartenderTick=()=>{}, diagnosticActor=null;
 const fpsLabel=document.createElement('div');fpsLabel.style.cssText='position:fixed;top:env(safe-area-inset-top,0px);right:8px;z-index:9999;background:#111b;color:white;padding:5px 8px;font:12px monospace;pointer-events:none';fpsLabel.textContent='FPS: medindo';document.body.append(fpsLabel);
 let fpsStart=performance.now(),fpsFrames=0,dustLast=0;
 const perf=document.createElement('select');perf.style.cssText='position:fixed;right:8px;top:calc(env(safe-area-inset-top,0px) + 30px);z-index:9999;font-size:12px';for(const [v,t] of [['normal','Normal'],['freeze','André congelado'],['hide','Sem André'],['animated','Cidade animada'],['blank','Teste sem render']]){const o=document.createElement('option');o.value=v;o.textContent=t;perf.append(o);}document.body.append(perf);perf.onchange=()=>{if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';fpsStart=performance.now();fpsFrames=0;};
-let cityInitialized=false;let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(!cityInitialized||perf.value==='animated'){scene.userData.updateCity?.(stamp/1000);cityInitialized=true;}citySum+=performance.now()-cityStart;if(stamp-dustLast>=33){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='animated')bartenderTick();const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
+let cityInitialized=false;let cpuSum=0,citySum=0,renderSum=0;let w=0,h=0;function frame(){const stamp=performance.now();fpsFrames++;if(stamp-fpsStart>=1000){fpsLabel.textContent='FPS: '+Math.round(fpsFrames*1000/(stamp-fpsStart))+' | '+renderer.info.render.calls+' calls | '+Math.round(renderer.info.render.triangles/1000)+'k tri | CPU '+(cpuSum/Math.max(1,fpsFrames)).toFixed(1)+'ms | cidade '+(citySum/Math.max(1,fpsFrames)).toFixed(1)+'ms | render '+(renderSum/Math.max(1,fpsFrames)).toFixed(1)+'ms';cpuSum=citySum=renderSum=0;fpsFrames=0;fpsStart=stamp;}if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();const cityStart=performance.now();if(!cityInitialized||perf.value==='animated'){scene.userData.updateCity?.(stamp/1000);cityInitialized=true;}citySum+=performance.now()-cityStart;if(stamp-dustLast>=66){updateDust(stamp/1000);dustLast=stamp;}if(diagnosticActor)diagnosticActor.visible=perf.value!=='hide';if(perf.value==='normal'||perf.value==='animated')bartenderTick();const renderStart=performance.now();if(perf.value!=='blank')renderer.render(scene,camera);renderSum+=performance.now()-renderStart;cpuSum+=performance.now()-stamp;requestAnimationFrame(frame)}requestAnimationFrame(frame);
 }catch(e){document.querySelector('#status').textContent='Erro ao iniciar: '+e.message;console.error(e)}
 
