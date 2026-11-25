@@ -209,6 +209,7 @@ function controls(canvas, camera, objects, callbacks) {
     fingers.set(e.pointerId, {x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY});
     if (fingers.size > 1) {
       cancelDrag();
+      moved=true;
       pinch = spacing();
       gesture = 'pinch';
       return;
@@ -308,13 +309,14 @@ const rocker=part(switchRoot,.069,.095,.018,0,0,.034,plateMat);rocker.rotation.x
 const roomLight=new T.PointLight(0xffead5,0,10,2);roomLight.position.set(0,2.58,0);roomLight.castShadow=true;roomLight.shadow.mapSize.setScalar(512);roomLight.shadow.bias=-.001;roomLight.shadow.autoUpdate=false;scene.add(roomLight);
 let lampOn=true;roomLight.intensity=22;roomLight.shadow.needsUpdate=true;rocker.rotation.x=.13;
 function toggleLamp(){lampOn=!lampOn;rocker.rotation.x=lampOn?.13:-.13;roomLight.intensity=lampOn?22:0;if(lampOn)roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent=lampOn?'Luz acesa · Toque no interruptor para apagar':'Luz apagada · Toque no interruptor para acender';}
-const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:()=>{}});document.querySelector('#homeBtn').onclick=c.home;
+let walkTo=()=>{};
+const c=controls(canvas,camera,{switch:switchRoot},{select:()=>{},canDrag:()=>false,tap:toggleLamp,floor:p=>walkTo(p)});document.querySelector('#homeBtn').onclick=c.home;
 
 let bartenderTick=()=>{};
 (async()=>{
  const {GLTFLoader}=await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js');
  const gltf=await new GLTFLoader().loadAsync('../assets/models/andre.glb');
- const man=gltf.scene;scene.add(man);man.position.set(-1.30,0,-1.19);
+ const man=gltf.scene;scene.add(man);man.position.set(0,0,0);
  man.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=true;o.frustumCulled=false;}});
  const bone=n=>{let found;man.traverse(o=>{if(o.name.replace(/[^a-z0-9]/gi,'').endsWith(n))found=o;});return found;};
  const mixer=new T.AnimationMixer(man),idle=gltf.animations.find(a=>a.name==='Idle');
@@ -324,55 +326,79 @@ let bartenderTick=()=>{};
  // Face the customer side (+Z), using the model's eye positions to determine forward.
  const le=bone('LeftEye'),re=bone('RightEye');
  if(le&&re&&head){const eye=le.getWorldPosition(new T.Vector3()).add(re.getWorldPosition(new T.Vector3())).multiplyScalar(.5).sub(head.getWorldPosition(new T.Vector3()));if(Math.abs(eye.z)+Math.abs(eye.x)>.01)man.rotation.y=-Math.atan2(eye.x,eye.z);}
- const arms=['Left','Right'].map(side=>({upper:bone(side+'Arm'),lower:bone(side+'ForeArm'),hand:bone(side+'Hand'),middle:bone(side+'HandMiddle1'),thumb:bone(side+'HandThumb1'),side}));
- const v=()=>new T.Vector3();
- function rotateWorld(b,q){const p=b.parent.getWorldQuaternion(new T.Quaternion());b.quaternion.premultiply(p.clone().invert().multiply(q).multiply(p));b.updateMatrixWorld(true);}
- function aim(b,child,target){const p=b.getWorldPosition(v()),a=child.getWorldPosition(v()).sub(p).normalize(),d=target.clone().sub(p).normalize();rotateWorld(b,new T.Quaternion().setFromUnitVectors(a,d));}
- function poseArm(arm, time) {
-   const shoulder = arm.upper.getWorldPosition(v());
-   const elbow = arm.lower.getWorldPosition(v());
-   const wrist = arm.hand.getWorldPosition(v());
-   const upperLength = shoulder.distanceTo(elbow);
-   const lowerLength = elbow.distanceTo(wrist);
-   const outward = shoulder.x >= man.position.x ? 1 : -1;
-   // Keep each palm planted just inside the bartender's edge of the slab.
-   const target = new T.Vector3(-1.30 + outward * .235, 1.115, -.945);
-   const axis = target.clone().sub(shoulder);
-   const distance = axis.length();
-   axis.normalize();
-   const reach = Math.min(distance, upperLength + lowerLength - .0001);
-   const along = (upperLength ** 2 - lowerLength ** 2 + reach ** 2) / (2 * reach);
-   const pole = new T.Vector3(outward * (.32 + .015 * Math.sin(time)), -1, -.32);
-   pole.addScaledVector(axis, -pole.dot(axis)).normalize();
-   const hinge = shoulder.clone().addScaledVector(axis, along)
-     .addScaledVector(pole, Math.sqrt(Math.max(0, upperLength ** 2 - along ** 2)));
-   aim(arm.upper, arm.lower, hinge);
-   aim(arm.lower, arm.hand, target);
-   if (arm.middle && arm.thumb) {
-     const forward = new T.Vector3(-outward * .12, -.085, 1).normalize();
-     const hand = arm.hand.getWorldPosition(v());
-     aim(arm.hand, arm.middle, hand.clone().add(forward));
-     const thumb = arm.thumb.getWorldPosition(v()).sub(hand);
-     thumb.addScaledVector(forward, -thumb.dot(forward)).normalize();
-     const inward = new T.Vector3(-outward, 0, 0);
-     inward.addScaledVector(forward, -inward.dot(forward)).normalize();
-     const roll = Math.atan2(forward.dot(thumb.clone().cross(inward)), thumb.dot(inward));
-     rotateWorld(arm.hand, new T.Quaternion().setFromAxisAngle(forward, roll));
+ const motion = await fetch('../assets/animations/andre-walk.json?v=1').then(response => {
+   if (!response.ok) throw Error('Falha ao carregar a caminhada');
+   return response.json();
+ });
+ const tracks = Object.entries(motion.rotations).map(([name, values]) =>
+   new T.QuaternionKeyframeTrack(bone(name).name + '.quaternion', motion.times, values));
+ tracks.push(new T.VectorKeyframeTrack(hips.name + '.position', motion.times, motion.hips));
+ const walking = mixer.clipAction(new T.AnimationClip('André caminhada', motion.duration, tracks));
+ walking.play();
+ walking.paused = true;
+ walking.setEffectiveWeight(0);
+ const resting = idle && mixer.clipAction(idle);
+ const facingOffset = man.rotation.y;
+ const edge = -.25, back = -1.24, front = -.12;
+ const inside = p => p.x < edge && p.z > back && p.z < front;
+ function blocked(a,b) {
+   let lo = 0, hi = 1;
+   for (const [axis,min,max] of [['x',-3,edge],['z',back,front]]) {
+     const delta = b[axis]-a[axis];
+     if (Math.abs(delta)<1e-8) {
+       if (a[axis]<=min || a[axis]>=max) return false;
+     } else {
+       const t1=(min-a[axis])/delta, t2=(max-a[axis])/delta;
+       lo=Math.max(lo,Math.min(t1,t2)); hi=Math.min(hi,Math.max(t1,t2));
+     }
    }
+   return hi-lo>1e-6;
  }
- let last = performance.now(), elapsed = 0;
- bartenderTick = () => {
-   const now = performance.now();
-   const dt = Math.min(.05, (now - last) / 1000);
-   last = now;
-   elapsed += dt;
-   mixer.update(dt);
-   man.updateMatrixWorld(true);
-   for (const arm of arms) {
-     if (arm.upper && arm.lower && arm.hand) poseArm(arm, elapsed);
+ let route=[], speed=0, heading=0, distance=0, weight=0;
+ walkTo = p => {
+   if (!p || Math.abs(p.x)>2.25 || Math.abs(p.z)>2) return;
+   const goal=new T.Vector3(T.MathUtils.clamp(p.x,-2.02,2.02),0,T.MathUtils.clamp(p.z,-1.72,1.78));
+   if (inside(goal)) return;
+   const nodes=[man.position.clone(),goal,new T.Vector3(edge+.01,0,back-.01),new T.Vector3(edge+.01,0,front+.01)];
+   const options=[[1],[2,1],[3,1],[2,3,1],[3,2,1]];
+   let shortest=Infinity;
+   for (const option of options) {
+     let prev=nodes[0],length=0;
+     for (const i of option) {
+       if (blocked(prev,nodes[i])) { length=Infinity; break; }
+       length+=prev.distanceTo(nodes[i]); prev=nodes[i];
+     }
+     if (length<shortest) { shortest=length; route=option.map(i=>nodes[i]); }
    }
  };
- roomLight.shadow.needsUpdate=true;document.querySelector('#status').textContent='André · Laboratório do bar';
+ let last=performance.now();
+ bartenderTick=()=>{
+   const now=performance.now(), dt=Math.min(.05,(now-last)/1000); last=now;
+   let step=0;
+   if (route.length) {
+     const goal=route[0],dx=goal.x-man.position.x,dz=goal.z-man.position.z,len=Math.hypot(dx,dz);
+     const desired=Math.atan2(dx,dz);
+     const turn=Math.atan2(Math.sin(desired-heading),Math.cos(desired-heading));
+     const limit=3.4*dt;
+     heading+=T.MathUtils.clamp(turn,-limit,limit);
+     man.rotation.y=facingOffset+heading;
+     const aligned=Math.max(0,1-Math.abs(turn)/.85);
+     const cruise=Math.min(1.12,Math.sqrt(4.4*len))*aligned;
+     speed+=T.MathUtils.clamp(cruise-speed,-3.2*dt,2.2*dt);
+     step=Math.min(len,speed*dt*aligned);
+     if(len>.00001) { man.position.x+=dx/len*step; man.position.z+=dz/len*step; }
+     if(len-step<.002) route.shift();
+   } else speed=0;
+   distance+=step;
+   walking.time=(distance%motion.stride)/motion.stride*motion.duration;
+   const blend=T.MathUtils.clamp(step/Math.max(dt,.00001)/.38,0,1);
+   weight+=(blend-weight)*(1-Math.exp(-14*dt));
+   walking.setEffectiveWeight(weight);
+   if(resting) resting.setEffectiveWeight(1-weight);
+   mixer.update(dt);
+ };
+ roomLight.shadow.needsUpdate=true;
+ document.querySelector('#status').textContent='Toque no chão para André caminhar · Arraste para girar';
 })().catch(e=>{document.querySelector('#status').textContent='Erro ao carregar bartender: '+e.message;console.error(e)});
 
 let w=0,h=0;function frame(){if(w!==canvas.clientWidth||h!==canvas.clientHeight){w=canvas.clientWidth;h=canvas.clientHeight;renderer.setSize(Math.max(1,w),Math.max(1,h),false)}c.update();scene.userData.updateCity?.(performance.now()/1000);updateDust(performance.now()/1000);bartenderTick();renderer.render(scene,camera);requestAnimationFrame(frame)}requestAnimationFrame(frame);
