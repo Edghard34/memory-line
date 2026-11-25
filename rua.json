@@ -1,0 +1,16 @@
+{
+  "largura": 2070,
+  "fachadas": [
+    {"nome":"oficina","x":202,"altura":326},
+    {"nome":"mercearia","x":510,"altura":208},
+    {"nome":"padaria","x":766,"altura":235},
+    {"nome":"farmacia","x":1060,"altura":215},
+    {"nome":"pousada","x":1350,"altura":311},
+    {"nome":"casa","x":1700,"altura":235}
+  ],
+  "objetos": [
+    ["arvore",-145,392,440],["carro",14,393,99],["poste",488,392,362],
+    ["vaso",504,392,51],["caixa",729,391,26],["sacos",995,392,47],
+    ["poste",1113,392,362],["poste",1738,392,362],["vaso",1670,392,48]
+  ]
+}
