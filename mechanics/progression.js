@@ -76,3 +76,5 @@ function finish(won){
  if(won){const c=document.createElement('p');c.className='notes';c.textContent='BRASA · Arte de personagens e cenário a partir das folhas originais do projeto.';el.append(c)}
 }
 
+
+window.brasaMapVersion=18;
