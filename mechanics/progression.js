@@ -21,6 +21,7 @@ function enter(){
  roomTime=0;stageClock=0;sinceHit=0;doorLock=.7;shake=0;flash=0;cleared=false;fight=run.kind==='combat'||run.kind==='elite'||run.room===4;
  prepareFloor(biome,rng);
  const vx=W/2+420,vy=H-850;
+ [[-57,-8,0],[55,-24,1],[57,59,2]].forEach(([dx,dy,house])=>objects.push({x:vx+dx,y:vy+dy,k:'village_house',house,w:78,r:28}));
  for(let x=-112;x<=112;x+=14){objects.push({x:vx+x,y:vy-87,k:'village_fence',w:14,r:7});if(Math.abs(x)>24)objects.push({x:vx+x,y:vy+87,k:'village_fence',w:14,r:7});}
  for(let y=-73;y<=73;y+=14)for(const x of [-112,112])objects.push({x:vx+x,y:vy+y,k:'village_fence',w:14,r:7,vertical:true});
  for(let i=0;i<34;i++){const x=vx+(rng()<.5?-1:1)*(82+rng()*18),y=vy-70+rng()*140;objects.push({x,y,k:choose(['d_tuft','d_flower','d_moss','d_reed','rock_m'],rng),w:5+rng()*7,r:0});}
@@ -82,4 +83,4 @@ function finish(won){
 }
 
 
-window.brasaMapVersion=25;
+window.brasaMapVersion=26;
