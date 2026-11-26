@@ -9,7 +9,7 @@ const frameHeight = 88;
 const footY = 79;
 const frameCount = 8;
 const idleFrame = 2;
-const directionRows = { south: 0, west: 1, east: 2, north: 3 };
+const directionRows = { south: 0, west: 2, east: 2, north: 3 };
 const framesPerSecond = 10;
 const walkSpeed = 85;
 const street = createStreet(canvas.width, canvas.height);
@@ -70,7 +70,9 @@ function drawActor() {
   context.save();
   context.translate(Math.round(x), Math.round(y));
   const frame = idle ? idleFrame : step;
-  const row = directionRows[idle ? 'south' : facing] * frameHeight;
+  const direction = idle ? 'south' : facing;
+  const row = directionRows[direction] * frameHeight;
+  if (direction === 'west') context.scale(-1, 1);
   const inhale = idle && idleTime >= 0.7 && idleTime < 1.6 ? 1 : 0;
   context.drawImage(actorSheet, frame * frameWidth, row, frameWidth, footY,
     -frameWidth / 2, -footY - inhale, frameWidth, footY + inhale);
