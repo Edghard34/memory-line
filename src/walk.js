@@ -8,6 +8,8 @@ const frameWidth = 64;
 const frameHeight = 88;
 const footY = 79;
 const frameCount = 8;
+const idleFrame = 2;
+const directionRows = { south: 0, west: 1, east: 2, north: 3 };
 const framesPerSecond = 10;
 const walkSpeed = 85;
 const street = createStreet(canvas.width, canvas.height);
@@ -20,8 +22,7 @@ let facing = 'south';
 let walkTime = 0;
 let idleTime = 0;
 let previousFrame;
-let sideSheet;
-let verticalSheet;
+let actorSheet;
 
 function loadImage(path) {
   return new Promise((resolve, reject) => {
@@ -68,12 +69,10 @@ function drawActor() {
   const step = Math.floor(walkTime * framesPerSecond) % frameCount;
   context.save();
   context.translate(Math.round(x), Math.round(y));
-  const frame = idle ? 0 : step;
-  const vertical = idle || facing === 'north' || facing === 'south';
-  const row = !idle && facing === 'north' ? frameHeight : 0;
+  const frame = idle ? idleFrame : step;
+  const row = directionRows[idle ? 'south' : facing] * frameHeight;
   const inhale = idle && idleTime >= 0.7 && idleTime < 1.6 ? 1 : 0;
-  context.scale(!vertical && facing === 'west' ? -1 : 1, 1);
-  context.drawImage(vertical ? verticalSheet : sideSheet, frame * frameWidth, row, frameWidth, footY,
+  context.drawImage(actorSheet, frame * frameWidth, row, frameWidth, footY,
     -frameWidth / 2, -footY - inhale, frameWidth, footY + inhale);
   context.restore();
 }
@@ -114,10 +113,7 @@ canvas.addEventListener('keydown', (event) => {
 });
 
 try {
-  [sideSheet, verticalSheet] = await Promise.all([
-    loadImage('../assets/sprites/walk-side.png'),
-    loadImage('../assets/sprites/caminhada_norte_sul.png'),
-  ]);
+  actorSheet = await loadImage('../assets/sprites/personagem_4_direcoes.png');
   requestAnimationFrame(render);
 } catch {
   status.textContent = 'Não foi possível carregar os sprites.';
