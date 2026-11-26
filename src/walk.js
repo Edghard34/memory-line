@@ -113,7 +113,7 @@ canvas.addEventListener('keydown', (event) => {
 });
 
 try {
-  actorSheet = await loadImage('../assets/sprites/personagem_4_direcoes.png?v=0.3.2');
+  actorSheet = await loadImage('../assets/sprites/personagem_4_direcoes.png?v=0.3.3');
   requestAnimationFrame(render);
 } catch {
   status.textContent = 'Não foi possível carregar os sprites.';
