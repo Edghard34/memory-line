@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Line</title>
+  <style>
+    body { margin: 0; min-height: 100svh; display: grid; place-items: center;
+      background: #11151c; color: #e7e3dc; font: 1rem system-ui, sans-serif; }
+    main { width: min(90vw, 800px); }
+    canvas { display: block; width: 100%; height: auto; image-rendering: pixelated;
+      background: #222b39; border-radius: 8px; cursor: pointer; touch-action: manipulation; }
+    p { color: #c8cfda; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Memory Line</h1>
+    <p id="instructions">Toque ou clique na cena para andar para o lado.</p>
+    <canvas width="480" height="240" tabindex="0" aria-label="Cena do jogo"
+      aria-describedby="instructions">Seu navegador precisa oferecer suporte a Canvas.</canvas>
+    <p id="status" role="status"></p>
+  </main>
+  <script type="module" src="./src/walk.js"></script>
+</body>
+</html>
