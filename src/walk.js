@@ -3,6 +3,8 @@ import { createStreet, sidewalk } from './street.js';
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
 const status = document.querySelector('#status');
+const instructions = document.querySelector('#instructions');
+const sceneDoor = document.querySelector('#scene-door');
 
 const frameWidth = 64;
 const frameHeight = 88;
@@ -23,6 +25,26 @@ let walkTime = 0;
 let idleTime = 0;
 let previousFrame;
 let actorSheet;
+let stationArt;
+const receptionFloor = { top: 138, bottom: 224 };
+let walkable = sidewalk;
+
+function changeScene() {
+  const entering = walkable === sidewalk;
+  walkable = entering ? receptionFloor : sidewalk;
+  x = entering ? 71 : 390;
+  y = entering ? 151 : 139;
+  destination = { x, y };
+  facing = 'south';
+  walkTime = 0;
+  idleTime = 0;
+  const action = entering ? 'Voltar para a rua' : 'Entrar na delegacia';
+  sceneDoor.textContent = action;
+  canvas.setAttribute('aria-label', entering ? 'Recepção da delegacia' : 'Rua da delegacia');
+  instructions.textContent = entering
+    ? 'Toque no piso para andar ou na porta à esquerda para sair.'
+    : 'Toque na calçada para andar ou na porta iluminada para entrar.';
+}
 
 function loadImage(path) {
   return new Promise((resolve, reject) => {
@@ -36,7 +58,7 @@ function loadImage(path) {
 function walkTo(targetX, targetY) {
   destination = {
     x: Math.max(frameWidth / 2, Math.min(canvas.width - frameWidth / 2, targetX)),
-    y: Math.max(sidewalk.top + 4, Math.min(sidewalk.bottom - 3, targetY)),
+    y: Math.max(walkable.top + 4, Math.min(walkable.bottom - 3, targetY)),
   };
 }
 
@@ -85,27 +107,47 @@ function render(timestamp) {
   update(seconds);
 
   context.imageSmoothingEnabled = false;
-  context.drawImage(street, 0, 0);
+  const inside = walkable === receptionFloor;
+  if (inside) {
+    for (const layer of stationArt.room) context.drawImage(layer, 0, 0);
+  } else {
+    context.drawImage(street, 0, 0);
+    context.drawImage(stationArt.facade, 0, 0);
+  }
   context.fillStyle = '#14182465';
   context.beginPath();
   context.ellipse(Math.round(x), Math.round(y), 11, 3, 0, 0, Math.PI * 2);
   context.fill();
   drawActor();
+  if (inside) {
+    context.drawImage(stationArt.foreground, 0, 0);
+    context.drawImage(stationArt.light, 0, 0);
+  }
   requestAnimationFrame(render);
 }
 
 canvas.addEventListener('click', (event) => {
+  if (!stationArt) return;
   const bounds = canvas.getBoundingClientRect();
-  walkTo((event.clientX - bounds.left) * canvas.width / bounds.width,
-    (event.clientY - bounds.top) * canvas.height / bounds.height);
+  const targetX = (event.clientX - bounds.left) * canvas.width / bounds.width;
+  const targetY = (event.clientY - bounds.top) * canvas.height / bounds.height;
+  const inside = walkable === receptionFloor;
+  const atDoor = inside
+    ? targetX >= 39 && targetX <= 103 && targetY >= 26 && targetY <= 125
+    : targetX >= 370 && targetX <= 412 && targetY >= 64 && targetY <= 112;
+  if (atDoor) {
+    changeScene();
+    return;
+  }
+  walkTo(targetX, targetY);
 });
 
 canvas.addEventListener('keydown', (event) => {
   const targets = {
     ArrowLeft: [0, y],
     ArrowRight: [canvas.width, y],
-    ArrowUp: [x, sidewalk.top + 4],
-    ArrowDown: [x, sidewalk.bottom - 3],
+    ArrowUp: [x, walkable.top + 4],
+    ArrowDown: [x, walkable.bottom - 3],
   };
   const target = targets[event.key];
   if (target) {
@@ -114,9 +156,22 @@ canvas.addEventListener('keydown', (event) => {
   }
 });
 
+sceneDoor.addEventListener('click', () => {
+  changeScene();
+  canvas.focus();
+});
+
 try {
-  actorSheet = await loadImage('../assets/sprites/personagem_4_direcoes.png?v=0.3.6');
+  const files = ['paredes', 'piso', 'moveis', 'primeiro-plano', 'luz', 'fachada'];
+  const [character, ...layers] = await Promise.all([
+    loadImage('../assets/sprites/personagem_4_direcoes.png?v=0.3.6'),
+    ...files.map(name => loadImage(`../assets/backgrounds/delegacia/${name}.png`)),
+  ]);
+  actorSheet = character;
+  const [walls, floor, furniture, foreground, light, facade] = layers;
+  stationArt = { room: [walls, floor, furniture], foreground, light, facade };
+  sceneDoor.disabled = false;
   requestAnimationFrame(render);
 } catch {
-  status.textContent = 'Não foi possível carregar os sprites.';
+  status.textContent = 'Não foi possível carregar a cena.';
 }
