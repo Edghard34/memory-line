@@ -3,6 +3,7 @@ const context = canvas.getContext('2d');
 const status = document.querySelector('#status');
 
 const frameWidth = 64;
+const frameHeight = 88;
 const footY = 79;
 const frameCount = 8;
 const framesPerSecond = 10;
@@ -13,11 +14,12 @@ const idleBreathSeconds = 2.8;
 let x = canvas.width / 2;
 let y = 173;
 let destination = { x, y };
-let facing = 1;
+let facing = 'south';
 let walkTime = 0;
 let idleTime = 0;
 let previousFrame;
 let sideSheet;
+let verticalSheet;
 
 function loadImage(path) {
   return new Promise((resolve, reject) => {
@@ -45,7 +47,9 @@ function update(seconds) {
   }
 
   idleTime = 0;
-  if (Math.abs(dx) > 1) facing = Math.sign(dx);
+  facing = Math.abs(dx) >= Math.abs(dy)
+    ? (dx < 0 ? 'west' : 'east')
+    : (dy < 0 ? 'north' : 'south');
   const step = walkSpeed * seconds;
   if (distance <= step) {
     ({ x, y } = destination);
@@ -62,10 +66,12 @@ function drawActor() {
   const step = Math.floor(walkTime * framesPerSecond) % frameCount;
   context.save();
   context.translate(Math.round(x), Math.round(y));
-  const frame = idle ? 3 : step;
+  const frame = idle ? 0 : step;
+  const vertical = idle || facing === 'north' || facing === 'south';
+  const row = !idle && facing === 'north' ? frameHeight : 0;
   const inhale = idle && idleTime >= 0.7 && idleTime < 1.6 ? 1 : 0;
-  context.scale(facing, 1);
-  context.drawImage(sideSheet, frame * frameWidth, 0, frameWidth, footY,
+  context.scale(!vertical && facing === 'west' ? -1 : 1, 1);
+  context.drawImage(vertical ? verticalSheet : sideSheet, frame * frameWidth, row, frameWidth, footY,
     -frameWidth / 2, -footY - inhale, frameWidth, footY + inhale);
   context.restore();
 }
@@ -105,7 +111,10 @@ canvas.addEventListener('keydown', (event) => {
 });
 
 try {
-  sideSheet = await loadImage('../assets/sprites/walk-side.png');
+  [sideSheet, verticalSheet] = await Promise.all([
+    loadImage('../assets/sprites/walk-side.png'),
+    loadImage('../assets/sprites/caminhada_norte_sul.png'),
+  ]);
   requestAnimationFrame(render);
 } catch {
   status.textContent = 'Não foi possível carregar os sprites.';
