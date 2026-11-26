@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Line</title>
+  <style>
+    body { margin: 0; min-height: 100svh; display: grid; place-items: center;
+      background: #11151c; color: #e7e3dc; font: 1rem system-ui, sans-serif; }
+    main { width: min(90vw, 800px); }
+    canvas { display: block; width: 100%; height: auto; image-rendering: pixelated;
+      background: #222b39; border-radius: 8px; cursor: pointer; touch-action: manipulation; }
+    button { min-height: 44px; padding: 0.5rem 0.875rem; border: 1px solid #796453;
+      border-radius: 5px; background: #382f2a; color: #f2e5ca; font: inherit; cursor: pointer; }
+    p, .version { color: #c8cfda; }
+    .version { font-size: 0.875rem; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Memory Line <span class="version">V0.4.2</span></h1>
+    <p id="instructions">Toque na calçada para andar ou na porta iluminada para entrar.</p>
+    <canvas width="480" height="240" tabindex="0" aria-label="Cena do jogo"
+      aria-describedby="instructions">Seu navegador precisa oferecer suporte a Canvas.</canvas>
+    <p><button id="scene-door" type="button" disabled>Entrar na delegacia</button></p>
+    <p id="status" role="status"></p>
+  </main>
+  <script type="module" src="./src/walk.js?v=0.4.2"></script>
+</body>
+</html>
