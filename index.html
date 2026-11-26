@@ -10,17 +10,18 @@
     main { width: min(90vw, 800px); }
     canvas { display: block; width: 100%; height: auto; image-rendering: pixelated;
       background: #222b39; border-radius: 8px; cursor: pointer; touch-action: manipulation; }
-    p { color: #c8cfda; }
+    p, .version { color: #c8cfda; }
+    .version { font-size: 0.875rem; font-weight: 500; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Memory Line</h1>
+    <h1>Memory Line <span class="version">V0.2.0</span></h1>
     <p id="instructions">Toque ou clique na cena para andar até o ponto.</p>
     <canvas width="480" height="240" tabindex="0" aria-label="Cena do jogo"
       aria-describedby="instructions">Seu navegador precisa oferecer suporte a Canvas.</canvas>
     <p id="status" role="status"></p>
   </main>
-  <script type="module" src="./src/walk.js?v=7801a49"></script>
+  <script type="module" src="./src/walk.js?v=0.2.0"></script>
 </body>
 </html>
