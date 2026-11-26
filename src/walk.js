@@ -1,5 +1,5 @@
 import { createStreet, sidewalk } from './street.js';
-import { counterDepth, receptionFloor, receptionRoute } from './reception.js';
+import { counterDepth, receptionFloor, receptionFloorTop, receptionRoute } from './reception.js?v=0.4.2';
 
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
@@ -33,8 +33,8 @@ let walkable = sidewalk;
 function changeScene() {
   const entering = walkable === sidewalk;
   walkable = entering ? receptionFloor : sidewalk;
-  x = entering ? 71 : 390;
-  y = entering ? 151 : 139;
+  x = entering ? 73 : 390;
+  y = entering ? 192 : 139;
   destination = { x, y };
   route = [];
   facing = 'south';
@@ -58,10 +58,10 @@ function loadImage(path) {
 }
 
 function walkTo(targetX, targetY) {
-  const target = {
-    x: Math.max(frameWidth / 2, Math.min(canvas.width - frameWidth / 2, targetX)),
-    y: Math.max(walkable.top + 4, Math.min(walkable.bottom - 3, targetY)),
-  };
+  const inside = walkable === receptionFloor;
+  const xLimit = Math.max(frameWidth / 2, Math.min(canvas.width - frameWidth / 2, targetX));
+  const floorTop = inside ? receptionFloorTop(xLimit) : walkable.top;
+  const target = { x: xLimit, y: Math.max(floorTop + 4, Math.min(walkable.bottom - 3, targetY)) };
   route = walkable === receptionFloor ? receptionRoute({ x, y }, target) : [target];
   destination = route.shift() ?? { x, y };
   advanceRoute();
@@ -86,7 +86,7 @@ function update(seconds) {
   facing = Math.abs(dx) >= Math.abs(dy)
     ? (dx < 0 ? 'west' : 'east')
     : (dy < 0 ? 'north' : 'south');
-  const step = walkSpeed * seconds;
+  const step = walkSpeed * actorScale() * seconds;
   if (distance <= step) {
     ({ x, y } = destination);
     advanceRoute();
@@ -98,6 +98,12 @@ function update(seconds) {
   walkTime += seconds;
 }
 
+function actorScale() {
+  if (walkable !== receptionFloor) return 1;
+  const depth = (y - receptionFloor.top) / (receptionFloor.bottom - receptionFloor.top);
+  return 0.72 + depth * 0.38;
+}
+
 function drawActor() {
   const idle = x === destination.x && y === destination.y;
   const step = Math.floor(walkTime * framesPerSecond) % frameCount;
@@ -106,7 +112,8 @@ function drawActor() {
   const frame = idle ? idleFrame : step;
   const direction = idle ? 'south' : facing;
   const row = directionRows[direction] * frameHeight;
-  if (direction === 'west') context.scale(-1, 1);
+  const scale = actorScale();
+  context.scale(direction === 'west' ? -scale : scale, scale);
   const inhale = idle && idleTime >= 0.7 && idleTime < 1.6 ? 1 : 0;
   context.drawImage(actorSheet, frame * frameWidth, row, frameWidth, footY,
     -frameWidth / 2, -footY - inhale, frameWidth, footY + inhale);
@@ -129,13 +136,13 @@ function render(timestamp) {
   if (inside && y >= counterDepth) context.drawImage(stationArt.counter, 0, 0);
   context.fillStyle = '#14182465';
   context.beginPath();
-  context.ellipse(Math.round(x), Math.round(y), 11, 3, 0, 0, Math.PI * 2);
+  const scale = actorScale();
+  context.ellipse(Math.round(x), Math.round(y), 11 * scale, 3 * scale, 0, 0, Math.PI * 2);
   context.fill();
   drawActor();
   if (inside) {
     if (y < counterDepth) context.drawImage(stationArt.counter, 0, 0);
     context.drawImage(stationArt.foreground, 0, 0);
-    context.drawImage(stationArt.light, 0, 0);
   }
   requestAnimationFrame(render);
 }
@@ -147,7 +154,7 @@ canvas.addEventListener('click', (event) => {
   const targetY = (event.clientY - bounds.top) * canvas.height / bounds.height;
   const inside = walkable === receptionFloor;
   const atDoor = inside
-    ? targetX >= 39 && targetX <= 103 && targetY >= 26 && targetY <= 125
+    ? targetX >= 21 && targetX <= 111 && targetY >= 16 && targetY <= 183
     : targetX >= 370 && targetX <= 412 && targetY >= 64 && targetY <= 112;
   if (atDoor) {
     changeScene();
@@ -176,14 +183,14 @@ sceneDoor.addEventListener('click', () => {
 });
 
 try {
-  const files = ['paredes', 'piso', 'moveis', 'primeiro-plano', 'luz', 'fachada', 'balcao'];
+  const files = ['arquitetura', 'mesa', 'primeiro-plano', 'fachada', 'balcao'];
   const [character, ...layers] = await Promise.all([
     loadImage('../assets/sprites/personagem_4_direcoes.png?v=0.3.6'),
-    ...files.map(name => loadImage(`../assets/backgrounds/delegacia/${name}.png?v=0.4.1`)),
+    ...files.map(name => loadImage(`../assets/backgrounds/delegacia/${name}.png?v=0.4.2`)),
   ]);
   actorSheet = character;
-  const [walls, floor, furniture, foreground, light, facade, counter] = layers;
-  stationArt = { room: [walls, floor, furniture], foreground, light, facade, counter };
+  const [architecture, desk, foreground, facade, counter] = layers;
+  stationArt = { room: [architecture, desk], foreground, facade, counter };
   sceneDoor.disabled = false;
   requestAnimationFrame(render);
 } catch {

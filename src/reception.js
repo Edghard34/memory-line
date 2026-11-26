@@ -1,4 +1,4 @@
-const counter = { left: 96, right: 254, top: 145, bottom: 193 };
+const counter = { left: 115, right: 274, top: 176, bottom: 204 };
 const corners = [
   { x: counter.left, y: counter.top },
   { x: counter.right, y: counter.top },
@@ -6,8 +6,12 @@ const corners = [
   { x: counter.right, y: counter.bottom },
 ];
 
-export const counterDepth = 186;
-export const receptionFloor = { top: 129, bottom: 224 };
+export const counterDepth = 198;
+export const receptionFloor = { top: 143, bottom: 229 };
+
+export function receptionFloorTop(x) {
+  return Math.max(receptionFloor.top, 205 - x * 0.28);
+}
 
 function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
