@@ -1,4 +1,5 @@
 import { createStreet, sidewalk } from './street.js';
+import { counterDepth, receptionFloor, receptionRoute } from './reception.js';
 
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
@@ -20,13 +21,13 @@ const idleBreathSeconds = 2.8;
 let x = canvas.width / 2;
 let y = 173;
 let destination = { x, y };
+let route = [];
 let facing = 'south';
 let walkTime = 0;
 let idleTime = 0;
 let previousFrame;
 let actorSheet;
 let stationArt;
-const receptionFloor = { top: 138, bottom: 224 };
 let walkable = sidewalk;
 
 function changeScene() {
@@ -35,6 +36,7 @@ function changeScene() {
   x = entering ? 71 : 390;
   y = entering ? 151 : 139;
   destination = { x, y };
+  route = [];
   facing = 'south';
   walkTime = 0;
   idleTime = 0;
@@ -56,10 +58,19 @@ function loadImage(path) {
 }
 
 function walkTo(targetX, targetY) {
-  destination = {
+  const target = {
     x: Math.max(frameWidth / 2, Math.min(canvas.width - frameWidth / 2, targetX)),
     y: Math.max(walkable.top + 4, Math.min(walkable.bottom - 3, targetY)),
   };
+  route = walkable === receptionFloor ? receptionRoute({ x, y }, target) : [target];
+  destination = route.shift() ?? { x, y };
+  advanceRoute();
+}
+
+function advanceRoute() {
+  while (route.length && x === destination.x && y === destination.y) {
+    destination = route.shift();
+  }
 }
 
 function update(seconds) {
@@ -78,7 +89,8 @@ function update(seconds) {
   const step = walkSpeed * seconds;
   if (distance <= step) {
     ({ x, y } = destination);
-    walkTime = 0;
+    advanceRoute();
+    if (x === destination.x && y === destination.y) walkTime = 0;
     return;
   }
   x += dx / distance * step;
@@ -114,12 +126,14 @@ function render(timestamp) {
     context.drawImage(street, 0, 0);
     context.drawImage(stationArt.facade, 0, 0);
   }
+  if (inside && y >= counterDepth) context.drawImage(stationArt.counter, 0, 0);
   context.fillStyle = '#14182465';
   context.beginPath();
   context.ellipse(Math.round(x), Math.round(y), 11, 3, 0, 0, Math.PI * 2);
   context.fill();
   drawActor();
   if (inside) {
+    if (y < counterDepth) context.drawImage(stationArt.counter, 0, 0);
     context.drawImage(stationArt.foreground, 0, 0);
     context.drawImage(stationArt.light, 0, 0);
   }
@@ -162,14 +176,14 @@ sceneDoor.addEventListener('click', () => {
 });
 
 try {
-  const files = ['paredes', 'piso', 'moveis', 'primeiro-plano', 'luz', 'fachada'];
+  const files = ['paredes', 'piso', 'moveis', 'primeiro-plano', 'luz', 'fachada', 'balcao'];
   const [character, ...layers] = await Promise.all([
     loadImage('../assets/sprites/personagem_4_direcoes.png?v=0.3.6'),
-    ...files.map(name => loadImage(`../assets/backgrounds/delegacia/${name}.png`)),
+    ...files.map(name => loadImage(`../assets/backgrounds/delegacia/${name}.png?v=0.4.1`)),
   ]);
   actorSheet = character;
-  const [walls, floor, furniture, foreground, light, facade] = layers;
-  stationArt = { room: [walls, floor, furniture], foreground, light, facade };
+  const [walls, floor, furniture, foreground, light, facade, counter] = layers;
+  stationArt = { room: [walls, floor, furniture], foreground, light, facade, counter };
   sceneDoor.disabled = false;
   requestAnimationFrame(render);
 } catch {
