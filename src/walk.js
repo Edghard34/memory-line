@@ -1,3 +1,5 @@
+import { createStreet, sidewalk } from './street.js';
+
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
 const status = document.querySelector('#status');
@@ -8,7 +10,7 @@ const footY = 79;
 const frameCount = 8;
 const framesPerSecond = 10;
 const walkSpeed = 85;
-const floorTop = 82;
+const street = createStreet(canvas.width, canvas.height);
 const idleBreathSeconds = 2.8;
 
 let x = canvas.width / 2;
@@ -33,7 +35,7 @@ function loadImage(path) {
 function walkTo(targetX, targetY) {
   destination = {
     x: Math.max(frameWidth / 2, Math.min(canvas.width - frameWidth / 2, targetX)),
-    y: Math.max(floorTop + 1, Math.min(canvas.height - 5, targetY)),
+    y: Math.max(sidewalk.top + 4, Math.min(sidewalk.bottom - 3, targetY)),
   };
 }
 
@@ -81,11 +83,12 @@ function render(timestamp) {
   previousFrame = timestamp;
   update(seconds);
 
-  context.fillStyle = '#222b39';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#343b46';
-  context.fillRect(0, floorTop, canvas.width, canvas.height - floorTop);
   context.imageSmoothingEnabled = false;
+  context.drawImage(street, 0, 0);
+  context.fillStyle = '#14182465';
+  context.beginPath();
+  context.ellipse(Math.round(x), Math.round(y), 11, 3, 0, 0, Math.PI * 2);
+  context.fill();
   drawActor();
   requestAnimationFrame(render);
 }
@@ -100,8 +103,8 @@ canvas.addEventListener('keydown', (event) => {
   const targets = {
     ArrowLeft: [0, y],
     ArrowRight: [canvas.width, y],
-    ArrowUp: [x, floorTop + 1],
-    ArrowDown: [x, canvas.height],
+    ArrowUp: [x, sidewalk.top + 4],
+    ArrowDown: [x, sidewalk.bottom - 3],
   };
   const target = targets[event.key];
   if (target) {
