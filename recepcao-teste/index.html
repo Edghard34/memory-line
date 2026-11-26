@@ -37,6 +37,46 @@ async function colorReceptionWalls(){
  const d=upper?[20,12,-10]:[-16,22,12];for(let j=0;j<3;j++)a.data[i+j]+=d[j]*f;
  }ctx.putImageData(a,0,0);const out=new Image();out.src=z.toDataURL('image/png');await out.decode();I.base=out;
 }
+async function colorRemainingReception(){
+ // Same masked, luminance-weighted pixel tint as the other reception props.
+ const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+ const R=(p,d,lo=18,hi=245)=>({p,d,lo,hi});
+ function tint(im,w,h,regions){const z=document.createElement('canvas');z.width=im.naturalWidth||im.width;z.height=im.naturalHeight||im.height;const ctx=z.getContext('2d');ctx.drawImage(im,0,0);const a=ctx.getImageData(0,0,z.width,z.height);
+ for(const {p,d,lo,hi} of regions){const m=document.createElement('canvas');m.width=z.width;m.height=z.height;const mc=m.getContext('2d');mc.scale(z.width/w,z.height/h);mc.fillStyle='#fff';mc.beginPath();p.forEach(([x,y],i)=>i?mc.lineTo(x,y):mc.moveTo(x,y));mc.closePath();mc.fill();const mask=mc.getImageData(0,0,z.width,z.height).data;
+ for(let i=0;i<a.data.length;i+=4){if(!a.data[i+3]||!mask[i+3])continue;const v=(a.data[i]+a.data[i+1]+a.data[i+2])/3;const f=mask[i+3]/255*Math.max(0,Math.min(1,(v-lo)/30,(hi-v)/35));for(let j=0;j<3;j++)a.data[i+j]+=d[j]*f;}}
+ ctx.putImageData(a,0,0);return z;}
+ const specs={
+ base:{w:2048,h:683,r:[
+ R([[62,0],[136,0],[324,64],[853,64],[853,0]],[8,5,-5]),
+ R([[1264,0],[2048,0],[1905,64],[1264,64]],[8,5,-5]),
+ R([[324,510],[655,510],[655,523],[324,523]],[9,5,-6]),
+ R([[843,508],[1204,508],[1204,523],[843,523]],[9,5,-6]),
+ R([[1395,508],[1480,508],[1480,523],[1395,523]],[9,5,-6]),
+ R([[1674,508],[1747,508],[1747,523],[1674,523]],[9,5,-6]),
+ R([[62,559],[324,524],[655,524],[2048,524],[2048,683],[0,683],[0,562]],[12,7,-8],22,230),
+ R([[90,175],[225,211],[225,357],[90,365]],[21,10,-10]),
+ R([[101,192],[212,221],[212,344],[101,352]],[5,3,-3]),
+ R([[248,222],[322,239],[322,320],[248,338]],[14,8,-7]),
+ R([[263,235],[311,247],[311,297],[286,325],[262,310]],[-8,7,15]),
+ R([[856,57],[876,44],[1243,44],[1261,58],[1253,87],[1244,67],[877,67],[866,86]],[8,9,11])
+ ]},
+ balcao:{w:651,h:164,r:[
+ R([[120,22],[615,22],[615,164],[408,164],[398,112],[249,106],[238,163],[232,163],[221,108],[119,108]],[28,15,-13],18,115),
+ R([[120,5],[650,0],[615,20],[120,20]],[24,13,-12]),
+ R([[615,37],[650,15],[650,140],[615,164]],[19,9,-10])
+ ]},
+ monitor:{w:119,h:106,r:[R(rect(0,0,119,106),[2,7,12])]},
+ cadeira_balcao:{w:93,h:83,r:[R(rect(0,0,93,83),[-9,10,19])]},
+ porta_canetas:{w:44,h:68,r:[R(rect(3,27,37,40),[15,8,-9]),R([[9,4],[14,3],[22,26],[17,27]],[9,13,20]),R([[29,3],[34,3],[32,27],[26,27]],[22,11,-11])]},
+ luminaria_mesa:{w:119,h:152,r:[R([[0,25],[8,11],[30,0],[53,0],[67,14],[75,37],[105,57],[110,78],[99,109],[88,124],[113,131],[118,150],[48,150],[53,133],[74,123],[89,84],[90,65],[69,43],[59,50],[3,36]],[1,10,12])]},
+ teclado:{w:96,h:22,r:[R(rect(0,0,96,22),[3,6,10])]},
+ papel:{w:81,h:30,r:[R([[0,15],[28,2],[77,2],[80,10],[50,29],[0,29]],[15,11,-10],40,255)]},
+ ventilador_suporte:{w:50,h:113,r:[R(rect(0,0,50,113),[11,7,-5])]}
+ };
+ await Promise.all(Object.entries(specs).map(async ([key,spec])=>{const im=I[key];if(!im)return;if(im.decode)await im.decode();if(!im.naturalWidth&&!im.width)return;const z=tint(im,spec.w,spec.h,spec.r);const out=new Image();out.src=z.toDataURL('image/png');await out.decode();I[key]=out;}));
+ // Continue the floor tint into the lower part of the existing repair patch.
+ if(cleanPatch)cleanPatch=tint(cleanPatch,130,278,[R(rect(0,222,130,56),[12,7,-8],22,230)]);
+}
 function colorLeftPlantAndPipes(){
 function tint(im,w,h,regions){const z=document.createElement('canvas');z.width=im.naturalWidth||im.width;z.height=im.naturalHeight||im.height;const ctx=z.getContext('2d');ctx.drawImage(im,0,0);const a=ctx.getImageData(0,0,z.width,z.height);for(const {p,d} of regions){const m=document.createElement('canvas');m.width=z.width;m.height=z.height;const mc=m.getContext('2d');mc.scale(z.width/w,z.height/h);mc.fillStyle='#fff';mc.beginPath();p.forEach(([x,y],i)=>i?mc.lineTo(x,y):mc.moveTo(x,y));mc.closePath();mc.fill();const mask=mc.getImageData(0,0,z.width,z.height).data;for(let i=0;i<a.data.length;i+=4){if(!a.data[i+3]||!mask[i+3])continue;const v=(a.data[i]+a.data[i+1]+a.data[i+2])/3;const f=mask[i+3]/255*Math.min(1,v/24)*Math.min(1,(255-v)/90);for(let j=0;j<3;j++)a.data[i+j]+=d[j]*f;}}ctx.putImageData(a,0,0);return z;}
 function replace(k,z){const out=new Image();out.src=z.toDataURL('image/png');I[k]=out;}
@@ -45,4 +85,4 @@ if(I.base?.naturalWidth)replace('base',tint(I.base,2048,683,[{p:[[12,0],[59,0],[
 if(cleanPatch)cleanPatch=tint(cleanPatch,130,278,[{p:[[60,0],[102,0],[102,222],[60,222]],d:metal}]);
 if(I.planta_esquerda?.naturalWidth)replace('planta_esquerda',tint(I.planta_esquerda,130,171,[{p:[[65,33],[67,14],[78,0],[87,0],[87,21],[81,37],[98,26],[116,30],[108,43],[90,54],[112,46],[120,54],[107,69],[93,75],[115,72],[127,87],[119,96],[103,92],[88,86],[99,102],[95,119],[85,114],[75,99],[72,132],[62,132],[62,101],[50,120],[39,123],[37,114],[45,98],[29,109],[16,114],[10,104],[21,88],[40,79],[18,86],[5,78],[12,67],[36,62],[16,58],[8,48],[18,40],[39,43],[51,49],[30,31],[18,31],[17,24],[37,23],[42,6],[50,4],[61,17]],d:[-15,23,-9]},{p:[[25,130],[43,126],[86,126],[105,132],[105,148],[96,157],[94,171],[38,171],[35,158],[26,150]],d:[24,7,-13]}]));
 }
-let cleanPatch;function preparePatch(){let im=I.base;if(!im?.naturalWidth)return;let z=document.createElement('canvas');z.width=130;z.height=278;let k=z.getContext('2d');k.drawImage(im,1436,318,130,278,0,0,130,278);/* preserve the actual pipe above the damaged area; repeat a clean straight section at native scale */for(let y=0;y<222;y+=28)k.drawImage(im,1800,275,42,28,60,y,42,Math.min(28,222-y));let a=k.getImageData(0,0,130,278);for(let y=0;y<278;y++)for(let x=0;x<130;x++){let edge=Math.min(x,129-x,y,277-y);a.data[(y*130+x)*4+3]=Math.round(255*Math.min(1,edge/12));}k.putImageData(a,0,0);cleanPatch=z;}function loop(t){let dt=Math.min(.05,(t-last)/1000||.016);last=t;if(route.length){let [x,y]=route[0],dx=x-px,dy=y-py,dist=Math.hypot(dx,dy),step=210*dt;facing=Math.abs(dx)>=Math.abs(dy)?(dx<0?'west':'east'):(dy<0?'north':'south');walkTime+=dt;if(dist<=step){px=x;py=y;route.shift()}else{px+=dx/dist*step;py+=dy/dist*step}}g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;draw('base',0,0,2112,704);if(cleanPatch)g.drawImage(cleanPatch,1740,318);draw('janela');for(let k in D)door(k,dt);draw('ventilador_suporte');draw('ventilador');let behind=py<=548&&px<738;if(behind)player();for(let k of props)draw(k);if(!behind)player();draw('cadeiras_esquerda');draw('cadeiras_direita');if(debug){g.strokeStyle='#7df';g.lineWidth=3;g.strokeRect(175,540,1885,160);g.strokeRect(175,540,356,15);g.strokeStyle='#f86';for(let [a,b,c,d] of obstacles)g.strokeRect(a,b,c-a,d-b)}requestAnimationFrame(loop)}c.addEventListener('pointerdown',e=>{let r=c.getBoundingClientRect(),x=(e.clientX-r.left)*2112/r.width,y=(e.clientY-r.top)*704/r.height;for(let k in D){let b=L['porta_'+k];if(x>b[0]&&x<b[2]&&y>b[1]&&y<b[3]){toggle(k);return}}if(y<540)return;plan(x,y)});A.walkSide='https://raw.githubusercontent.com/Edghard34/memory-line/be3d2d43ffbe9387cac052656d9f45d8065f6243/assets/sprites/personagem_4_direcoes.png';A.walkVertical='https://raw.githubusercontent.com/Edghard34/memory-line/fc4a1fb7e317e86a1dee18d215277c3a27181474/assets/sprites/caminhada_norte_sul.png';Promise.all(Object.entries(A).map(([k,v])=>new Promise(resolve=>{let im=I[k]=new Image;if(k==='walkSide'||k==='walkVertical')im.crossOrigin='anonymous';im.onload=resolve;im.onerror=resolve;im.src=v}))).then(async()=>{await colorReceptionWalls();preparePatch();colorForegroundChairs();colorRightProps();colorLeftPlantAndPipes();requestAnimationFrame(loop)});</script></html>
+let cleanPatch;function preparePatch(){let im=I.base;if(!im?.naturalWidth)return;let z=document.createElement('canvas');z.width=130;z.height=278;let k=z.getContext('2d');k.drawImage(im,1436,318,130,278,0,0,130,278);/* preserve the actual pipe above the damaged area; repeat a clean straight section at native scale */for(let y=0;y<222;y+=28)k.drawImage(im,1800,275,42,28,60,y,42,Math.min(28,222-y));let a=k.getImageData(0,0,130,278);for(let y=0;y<278;y++)for(let x=0;x<130;x++){let edge=Math.min(x,129-x,y,277-y);a.data[(y*130+x)*4+3]=Math.round(255*Math.min(1,edge/12));}k.putImageData(a,0,0);cleanPatch=z;}function loop(t){let dt=Math.min(.05,(t-last)/1000||.016);last=t;if(route.length){let [x,y]=route[0],dx=x-px,dy=y-py,dist=Math.hypot(dx,dy),step=210*dt;facing=Math.abs(dx)>=Math.abs(dy)?(dx<0?'west':'east'):(dy<0?'north':'south');walkTime+=dt;if(dist<=step){px=x;py=y;route.shift()}else{px+=dx/dist*step;py+=dy/dist*step}}g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;draw('base',0,0,2112,704);if(cleanPatch)g.drawImage(cleanPatch,1740,318);draw('janela');for(let k in D)door(k,dt);draw('ventilador_suporte');draw('ventilador');let behind=py<=548&&px<738;if(behind)player();for(let k of props)draw(k);if(!behind)player();draw('cadeiras_esquerda');draw('cadeiras_direita');if(debug){g.strokeStyle='#7df';g.lineWidth=3;g.strokeRect(175,540,1885,160);g.strokeRect(175,540,356,15);g.strokeStyle='#f86';for(let [a,b,c,d] of obstacles)g.strokeRect(a,b,c-a,d-b)}requestAnimationFrame(loop)}c.addEventListener('pointerdown',e=>{let r=c.getBoundingClientRect(),x=(e.clientX-r.left)*2112/r.width,y=(e.clientY-r.top)*704/r.height;for(let k in D){let b=L['porta_'+k];if(x>b[0]&&x<b[2]&&y>b[1]&&y<b[3]){toggle(k);return}}if(y<540)return;plan(x,y)});A.walkSide='https://raw.githubusercontent.com/Edghard34/memory-line/be3d2d43ffbe9387cac052656d9f45d8065f6243/assets/sprites/personagem_4_direcoes.png';A.walkVertical='https://raw.githubusercontent.com/Edghard34/memory-line/fc4a1fb7e317e86a1dee18d215277c3a27181474/assets/sprites/caminhada_norte_sul.png';Promise.all(Object.entries(A).map(([k,v])=>new Promise(resolve=>{let im=I[k]=new Image;if(k==='walkSide'||k==='walkVertical')im.crossOrigin='anonymous';im.onload=resolve;im.onerror=resolve;im.src=v}))).then(async()=>{await colorReceptionWalls();preparePatch();colorForegroundChairs();colorRightProps();colorLeftPlantAndPipes();await colorRemainingReception();requestAnimationFrame(loop)});</script></html>
