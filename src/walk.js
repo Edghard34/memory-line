@@ -4,9 +4,9 @@ const status = document.querySelector('#status');
 const sheet = new Image();
 
 const frameWidth = 64;
-const frameHeight = 88;
 const frameCount = 8;
 const idleFrame = 3;
+const idleBreathSeconds = 2.8;
 const framesPerSecond = 10;
 const walkSpeed = 85;
 const groundY = 182;
@@ -16,6 +16,7 @@ let x = canvas.width / 2;
 let destination = x;
 let facing = 1;
 let walkTime = 0;
+let idleTime = 0;
 let previousFrame;
 
 function walkTo(targetX) {
@@ -24,7 +25,12 @@ function walkTo(targetX) {
 
 function update(seconds) {
   const distance = destination - x;
-  if (distance === 0) return;
+  if (distance === 0) {
+    idleTime = (idleTime + seconds) % idleBreathSeconds;
+    return;
+  }
+
+  idleTime = 0;
 
   facing = Math.sign(distance);
   const step = walkSpeed * seconds;
@@ -48,12 +54,14 @@ function render(timestamp) {
   context.fillRect(0, groundY, canvas.width, canvas.height - groundY);
   context.imageSmoothingEnabled = false;
 
-  const frame = x === destination ? idleFrame : Math.floor(walkTime * framesPerSecond) % frameCount;
+  const idle = x === destination;
+  const frame = idle ? idleFrame : Math.floor(walkTime * framesPerSecond) % frameCount;
+  const inhale = idle && idleTime >= 0.7 && idleTime < 1.6 ? 1 : 0;
   context.save();
   context.translate(Math.round(x), groundY);
   context.scale(facing, 1);
-  context.drawImage(sheet, frame * frameWidth, 0, frameWidth, frameHeight,
-    -frameWidth / 2, -footY, frameWidth, frameHeight);
+  context.drawImage(sheet, frame * frameWidth, 0, frameWidth, footY,
+    -frameWidth / 2, -footY - inhale, frameWidth, footY + inhale);
   context.restore();
   requestAnimationFrame(render);
 }
