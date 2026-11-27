@@ -73,7 +73,7 @@ function prepareNightLighting() {
  layer.width = c.width;
  layer.height = c.height;
  const context = layer.getContext('2d');
- context.fillStyle = 'rgba(12,20,36,.44)';
+ context.fillStyle = 'rgba(5,10,23,.69)';
  context.fillRect(0,0,layer.width,layer.height);
 
  function pool(x,y,rx,ry,stops) {
@@ -89,14 +89,9 @@ function prepareNightLighting() {
 
  // Let the fixtures light the wall, furniture and actor in the same pass.
  context.globalCompositeOperation = 'destination-out';
- pool(1060,115,670,510,[[0,'#ffffffff'],[.27,'#ffffffb0'],[.69,'#ffffff46'],[1,'#ffffff00']]);
- pool(590,432,250,215,[[0,'#ffffffa0'],[.38,'#ffffff60'],[1,'#ffffff00']]);
- pool(1060,355,233,188,[[0,'#ffffff50'],[1,'#ffffff00']]);
-
- context.globalCompositeOperation = 'source-over';
- pool(1060,108,555,365,[[0,'#efc18028'],[.36,'#dbab6e15'],[1,'#dbab6e00']]);
- pool(1054,362,262,191,[[0,'#6185ad21'],[1,'#6185ad00']]);
- pool(590,431,218,170,[[0,'#edc17621'],[1,'#edc17600']]);
+ pool(1060,105,615,425,[[0,'#ffffffff'],[.24,'#ffffffbc'],[.55,'#ffffff57'],[1,'#ffffff00']]);
+ pool(590,432,235,172,[[0,'#ffffffcc'],[.34,'#ffffff75'],[1,'#ffffff00']]);
+ pool(1060,355,225,170,[[0,'#ffffff63'],[1,'#ffffff00']]);
 
  return layer;
 }
