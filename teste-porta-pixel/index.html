@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Line · Teste de pixel</title>
+  <style>
+    body { margin: 0; background: #15171b; color: #f2e9dc; font: 1rem system-ui, sans-serif; }
+    main { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    canvas { display: block; image-rendering: pixelated; touch-action: manipulation; }
+    #stage { width: 100%; overflow: hidden; background: #201e1d; }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    button { min-height: 44px; padding: 0 0.8rem; color: inherit; background: #40312a;
+      border: 1px solid #906b53; border-radius: 5px; font: inherit; }
+    p { color: #cbc3b9; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Teste de pixel da porta</h1>
+    <div id="stage">
+      <canvas id="scene" aria-label="Recepção com personagem ao lado da porta central"></canvas>
+    </div>
+    <div class="controls">
+      <button id="door" type="button" disabled>Abrir porta</button>
+      <button id="zoom" type="button" aria-pressed="false" disabled>Ampliar detalhe</button>
+    </div>
+    <p id="status" role="status"></p>
+  </main>
+  <script src="preview.js" defer></script>
+</body>
+</html>
